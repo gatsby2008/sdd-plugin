@@ -156,7 +156,7 @@ docs-registry/                  ← repo root
 │       └── IR-96-ADR-001-…md
 ├── spec-registry/              ← per-service subdir, one file per feature
 │   ├── consumer-portal-service/
-│   │   └── PROJ-17499-spec.md
+│   │   └── proj-17499-spec.md
 │   └── leads-service/
 │       ├── ir-96-spec.md
 │       └── proj-17150-spec.md
