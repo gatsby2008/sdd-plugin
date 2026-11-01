@@ -99,15 +99,15 @@ Answer it in the spec, then rerun /sdd:implement.
 
 ## Slug examples
 
-Used in Step 1. The slug is the branch name without its type prefix, with its case preserved — `/sdd:start` passes it to `start.py` verbatim, so it is exactly the prefix of the files under `.specwork/_state/`:
+Used in Step 1. `lib/slug.py` strips the type prefix, lowercases, and turns other non-alphanumeric runs into hyphens — the form `/sdd:start` and `/sdd:resync` write:
 
 ```text
-feature/IR-45        -> IR-45        (.specwork/_state/IR-45-state.json)
+feature/IR-45        -> ir-45        (.specwork/_state/ir-45-state.json)
 feature/ir-45-fix    -> ir-45-fix    (.specwork/_state/ir-45-fix-state.json)
 hotfix/foo           -> foo          (.specwork/_state/foo-state.json)
 ```
 
-If `<slug>-state.json` does not exist but a state file whose name differs **only in case** does (for example `ir-46-state.json` after `/sdd:resync`, which derives a lowercase slug), use that file's prefix as the slug. Never pick a state file whose name differs in anything other than case — that is another branch's pipeline; let Step 2 abort on the missing spec instead.
+If `<slug>-state.json` does not exist but a state file whose name differs **only in case** does (a pipeline started before `/sdd:start` used `lib/slug.py`, e.g. `IR-45-state.json`), use that file's prefix as the slug. Never pick a state file whose name differs in anything other than case — that is another branch's pipeline; let Step 2 abort on the missing spec instead.
 
 ---
 

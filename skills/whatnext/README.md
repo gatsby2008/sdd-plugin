@@ -37,7 +37,7 @@ When `/sdd:whatnext` reports that `/sdd:implement` is blocked by unresolved Open
 
 ```text
 Next step:
-  Resolve open questions in `/abs/path/repo/.specwork/_spec/PROJ-15535-spec.md:42`
+  Resolve open questions in `/abs/path/repo/.specwork/_spec/proj-15535-spec.md:42`
 
   Unresolved:
     - [ ] #1 Should lookup use personUuid only, or personUuid + collateral?

@@ -49,7 +49,7 @@ When the gate fires, `/sdd:plan` aborts with no writes and points at the spec us
 
 The spec contains unresolved Open Questions.
 Resolve them first:
-  `/abs/path/repo/.specwork/_spec/PROJ-15535-spec.md:42`
+  `/abs/path/repo/.specwork/_spec/proj-15535-spec.md:42`
 ```
 
 If anything is missing, `/sdd:plan` exits cleanly with no writes.

@@ -9,6 +9,12 @@ source.md captures the raw input the spec is drafted from. Pass the free-text
 description via --source-body-file to persist it (mirrors how the Jira path
 writes the fetched issue into source.md); without it, a placeholder is written.
 
+--slug must be canonical — exactly what lib/slug.py derives (lowercase,
+non-alphanumerics → hyphens), the same form /sdd:resync writes. A non-canonical
+slug is rejected (exit 2, nothing written) rather than normalized silently: the
+Jira path writes <slug>-source.md before this script runs, so a silent rename
+would split the pipeline's files across two prefixes.
+
 It does NOT create spec.md — that is /sdd:spec's job (draft mode reads source.md
 + templates/spec.md and writes the spec). The write_spec_scaffold helper below
 stays available as the canonical section structure for /sdd:spec and tests.
@@ -32,6 +38,7 @@ import sys
 from pathlib import Path
 
 import paths
+import slug as slugs
 
 
 def ensure_gitignore(entry=".specwork/"):
@@ -370,6 +377,16 @@ def main():
         "but reliable across subprocess boundaries (env vars are not always inherited).",
     )
     args = parser.parse_args()
+
+    canonical = slugs.normalize_slug(args.slug)
+    if args.slug != canonical:
+        hint = f"'{canonical}'" if canonical else "a non-empty slug"
+        print(
+            f"✗ Non-canonical slug '{args.slug}' — expected {hint}.\n"
+            f"  Derive it with: python3 lib/slug.py \"{args.branch}\"  (field 'slug')",
+            file=sys.stderr,
+        )
+        sys.exit(2)
 
     spec_dir = Path(args.spec_dir)
     for sub in ["_spec", "_state", "_progress"]:

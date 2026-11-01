@@ -65,7 +65,7 @@ In non-interactive mode the only allowed pauses are: the Open Questions gate, th
 git rev-parse --abbrev-ref HEAD
 ```
 
-Extract `slug` from the branch name: strip the type prefix and **keep the case** — never lowercase it yourself. It must equal the file prefix under `.specwork/_state/` (REF § Slug examples).
+Derive `slug` from the branch with `python3 ${CLAUDE_PLUGIN_ROOT}/lib/slug.py` (field `slug`) — the same helper `/sdd:start` and `/sdd:resync` use; never hand-craft it. It must equal the file prefix under `.specwork/_state/` (REF § Slug examples).
 
 ---
 

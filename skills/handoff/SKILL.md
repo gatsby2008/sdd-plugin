@@ -114,15 +114,15 @@ Otherwise derive it from current branch:
 git rev-parse --abbrev-ref HEAD
 ```
 
-Strip the type prefix and **keep the case** — never lowercase it yourself. `/sdd:start` passes the slug to `start.py` verbatim, so it is exactly the prefix of the files under `.specwork/_state/`:
+Derive it with `python3 ${CLAUDE_PLUGIN_ROOT}/lib/slug.py` (field `slug`) — the same helper `/sdd:start` and `/sdd:resync` use; never hand-craft it. It strips the type prefix, lowercases, and turns other non-alphanumeric runs into hyphens:
 
 ```text
-feature/IR-45        -> IR-45        (.specwork/_state/IR-45-state.json)
+feature/IR-45        -> ir-45        (.specwork/_state/ir-45-state.json)
 feature/ir-45-fix    -> ir-45-fix    (.specwork/_state/ir-45-fix-state.json)
 hotfix/foo           -> foo          (.specwork/_state/foo-state.json)
 ```
 
-If `<slug>-state.json` does not exist but a state file whose name differs **only in case** does (for example `ir-46-state.json` after `/sdd:resync`, which derives a lowercase slug), use that file's prefix as `SLUG`. Never pick a state file whose name differs in anything other than case — that is another branch's pipeline; let Step 2 report the missing artifacts instead.
+If `<slug>-state.json` does not exist but a state file whose name differs **only in case** does (a pipeline started before `/sdd:start` used `lib/slug.py`, e.g. `IR-45-state.json`), use that file's prefix as `SLUG`. Never pick a state file whose name differs in anything other than case — that is another branch's pipeline; let Step 2 report the missing artifacts instead.
 
 ---
 
