@@ -1,10 +1,193 @@
 # implement — Reference
 
-Reference material for `/sdd:implement`. Decision tables, output templates, and persistent escalation format. `SKILL.md` is the execution flow; this file holds the structures and templates.
+Reference material for `/sdd:implement`. `SKILL.md` is the execution flow and holds every step, gate, and rule; this file holds what is only needed on demand — abort messages, rationale, examples, decision tables, and output templates. Each section names the step that points to it.
 
 ---
 
-## Failure decision matrix
+## Abort messages
+
+Print the matching block verbatim (substituting `<slug>`) when a gate in `SKILL.md` aborts. Every abort writes nothing.
+
+**Step 0 — no pipeline** (`gates.py precheck` non-zero):
+
+```text
+✗ Cannot implement.
+No active pipeline (.specwork/ missing or uninitialized). Run /sdd:start first.
+```
+
+**Step 2 — missing spec:**
+
+```text
+✗ Cannot implement.
+
+Missing spec:
+.specwork/_spec/<slug>-spec.md
+
+The spec has not been drafted yet. /sdd:start bootstraps state; /sdd:spec writes
+the spec. Run /sdd:spec on this pipeline branch to draft it, then rerun /sdd:implement.
+```
+
+**Step 3 — unresolved Open Questions** (list only the files that block):
+
+```text
+✗ Cannot implement.
+
+Unresolved Open Questions:
+  - .specwork/_spec/<slug>-spec.md  (N items)
+  - .specwork/_plan/<slug>-plan.md  (M items)
+
+Resolve them in the respective file, then re-run /sdd:implement.
+```
+
+**Step 3.4 — plan required:**
+
+```text
+✗ Cannot implement.
+
+Triage classified this work as high-risk — a reviewable plan is required before
+implementation, and no plan exists yet:
+  .specwork/_plan/<slug>-plan.md
+
+Run /sdd:plan to produce it (it discovers target files and writes the approach),
+then re-run /sdd:implement.
+
+  /sdd:plan
+  /sdd:implement
+
+If the classification is wrong (e.g. the spec only says it does NOT publish an
+event), force the tier with a reason instead:
+
+  /sdd:spec --tier standard "<why this is not high-risk>"
+```
+
+**Step 3.5 — stale plan:**
+
+```text
+✗ Cannot implement.
+
+The spec changed after the plan was built:
+  .specwork/_spec/<slug>-spec.md
+  .specwork/_plan/<slug>-plan.md
+
+The plan no longer reflects the current spec — likely after a /sdd:spec refine
+or a manual spec edit. The plan's Target Files, Approach, and Risk Assessment
+may miss endpoints, classes, or constraints that the new spec introduced.
+
+Re-run /sdd:plan to regenerate the plan (idempotent — overwrites in place),
+then re-run /sdd:implement.
+
+  /sdd:plan
+  /sdd:implement
+
+If you intentionally want to discard the existing plan and let /sdd:implement
+discover targets from the spec directly, delete the plan file:
+  rm .specwork/_plan/<slug>-plan.md
+```
+
+**Step 5 — ambiguity found while implementing** (after appending `- [ ] <question>` to the spec):
+
+```text
+Open Question added to spec.
+
+.specwork/_spec/<slug>-spec.md
+  - [ ] <question>
+
+Answer it in the spec, then rerun /sdd:implement.
+```
+
+---
+
+## Slug examples
+
+Used in Step 1. The slug is the branch name without its type prefix, normalized to match the files under `.specwork/`:
+
+```text
+feature/IR-45        -> ir-45
+feature/ir-45-fix    -> ir-45-fix
+hotfix/foo           -> foo
+```
+
+---
+
+## Gate rationale
+
+Background for Steps 3, 3.4 and 3.5. The operative rules are in `SKILL.md`.
+
+**Open Questions (Step 3).** Spec Open Questions are business-behavior ambiguity, resolved in the spec. Plan Open Questions are discovery/implementation-path ambiguity surfaced by `/sdd:plan`, resolved in the plan. The canonical gate scans only the body of each file's `## Open Questions` section; checkboxes elsewhere are ignored. When no plan exists only the spec is checked (the no-plan workflow).
+
+**Plan required (Step 3.4).** High-risk / architectural work is the one place the otherwise-optional plan step becomes mandatory — it is the tier where skipping discovery is most costly. Triage stamps `plan_required: true` into `.specwork/_state/<slug>-path.json` for that tier; trivial, focused, and standard keep the optional plan (the vibe-coding path). A tier forced with `/sdd:spec --tier` wins over the automatic one in both directions. With no `path.json` (a pipeline triaged before the field existed) the gate passes. Once `/sdd:plan` writes the plan, this gate passes and Step 3.5 takes over.
+
+**Plan staleness (Step 3.5).** A plan built against an older spec describes Target Files, an Approach, and a Risk Assessment that no longer match the behavior — implementing against it silently skips whatever `/sdd:spec` (or a manual edit) added. The gate compares the spec **content fingerprint** stamped into the plan by `/sdd:plan`, so it stays correct after `git stash`/`checkout`/`rebase` and `/sdd:pause` → `/sdd:restore` (which reset mtimes). It fires on any real content change, whoever made it (`/sdd:spec`, a manual edit, `/sdd:resync`); a `touch` or whitespace-only save does not. Legacy plans with no fingerprint fall back to spec mtime > plan mtime (equal mtimes are fresh).
+
+---
+
+## Cache fields
+
+Used in Step 2 (read) and Step 7 (write). `implementation-cache.json` is a fast index for this feature:
+
+- `repositories`: already identified repositories
+- `patterns`: validated local implementation patterns
+- `related_tests`: tests likely to cover behavior
+- `similar_classes`: classes with similar behavior to reuse
+- `notes`: small implementation breadcrumbs
+
+Example shape:
+
+```json
+{
+  "schema_version": 1,
+  "id": "<slug>",
+  "repositories": ["LeadsRequestRepository"],
+  "patterns": ["fallback lookup uses person + collateral identity"],
+  "related_tests": ["DetailedLeadsProcessorIT"],
+  "similar_classes": ["ExistingFallbackProcessor"],
+  "notes": ["leadId fallback path is exercised in IT only"]
+}
+```
+
+---
+
+## Discovery guidance
+
+Used in Step 4 on the discovery-fallback path (no plan).
+
+Look in the spec and cache for: explicit files, classes, endpoints, repositories, DTOs, test classes, package hints.
+
+Cache-first targeting:
+
+- if `similar_classes` contains a likely match, inspect that file first
+- if `related_tests` exists, start from those tests to locate production code
+- if `repositories` exists, prioritize those repositories before searching new ones
+
+Allowed targeted discovery:
+
+```bash
+find src -name "*KnownClassName*"
+grep -r "knownMethodOrEndpoint" src/main src/test
+```
+
+Avoid broad commands like these unless the user explicitly approves:
+
+```bash
+find src -type f
+grep -r "<generic term>" .
+```
+
+---
+
+## Running individual tests
+
+Used in Step 6. Run only the tests you created or modified, with the stack's command:
+
+```bash
+# Java
+./gradlew test --tests "com.example.MyTest"
+
+# Frontend
+npm test -- MyComponent.test    # or pnpm/yarn equivalent
+```
+
+---
 
 Used in Step 6 to classify a test or validation failure before attempting a fix:
 
@@ -16,6 +199,29 @@ Used in Step 6 to classify a test or validation failure before attempting a fix:
 | Spring context / infrastructure failure | `ApplicationContext` fails, bean wiring unclear, profile/config issue, datasource/Testcontainers issue, port/env problem | Escalate unless clearly caused by this change |
 | Environmental/flaky failure | timeout, network, Docker/Testcontainers instability, random ordering, non-deterministic failure | Escalate immediately |
 | Business ambiguity | expected behavior unclear, assertion could be valid under multiple interpretations | Stop and create/update Open Question |
+
+---
+
+## Retry and escalation detail
+
+Used in Step 6.
+
+**Failing area** — retries are tracked per area. An area is one of: the same unit test, the same integration test, the same compile failure, the same runtime exception, the same Spring context failure, the same infrastructure/configuration issue, the same test data / fixture setup issue. The count increments only when the same area persists after a fix attempt; unrelated new failures are reported separately, not counted.
+
+**Escalation report** — when the budget is exhausted, STOP and report:
+
+1. failing test or component
+2. exact error excerpt
+3. suspected root cause
+4. files modified
+5. fixes already attempted
+6. recommended human review area
+
+**While escalating, do not:** continue retrying indefinitely; rewrite unrelated infrastructure; perform broad exploratory refactors; modify unrelated production code attempting speculative fixes; change test expectations just to make tests pass; remove assertions unless the spec explicitly requires a behavior change.
+
+**Human escalation is a valid and preferred outcome when:** integration tests repeatedly fail; infrastructure behavior is unclear; Spring context failures persist; the issue appears environmental; the fix requires historical or domain-specific knowledge; the failure cannot be tied directly to the current spec.
+
+**Why `_progress/escalations.md`.** Escalations are runtime learning — what blocked execution, what was tried, what the human should look at next. They are not part of the contract (`_spec/`) or the deterministic state (`_state/`). `/sdd:handoff` reads the file and adds a *Known Blockers / Escalations* section to the execution capsule so an external executor doesn't repeat failed attempts. The on-screen summary is ephemeral; the file is the persistent record. `/sdd:close` wipes it with the rest of `.specwork/` once the feature merges.
 
 ---
 
@@ -46,6 +252,19 @@ Fixes attempted:
 Recommended human review:
 <file/config/test setup>
 ```
+
+---
+
+## Simplicity checklist
+
+Used in Step 7.5. Look for concrete, **spec-preserving** simplifications in the diff just written:
+
+- **Fewer moving parts** — a new abstraction, layer, or indirection the spec did not ask for and a single call site does not justify.
+- **Reuse over reinvention** — an existing helper, pattern, or class in the touched area that already does what the new code does.
+- **Smaller surface** — a narrower signature, fewer new public methods, less config, a shorter diff that still satisfies the spec.
+- **No speculative generality** — parameters, hooks, or branches added "just in case" with no current caller.
+
+Simplification is about *form*, not *function*: a simplification that would change behavior is a spec concern, not an elegance note — do not reopen a resolved Open Question here.
 
 ---
 
@@ -163,3 +382,12 @@ After fixing manually, rerun the focused test or continue with:
 ```
 
 Do not hide failed tests behind a normal "done" message.
+
+---
+
+## Related skills
+
+- `start` — creates rules/state artifacts and captures the source
+- `spec` — drafts the spec + Open Questions, and refines it mid-pipeline; a spec change can trigger the Plan Staleness Gate; `--tier` corrects a wrong triage tier
+- `plan` — when the staleness or plan-required gate fires, run `/sdd:plan` (idempotent)
+- `commit` — stage and commit implementation changes
