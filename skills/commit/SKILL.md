@@ -17,6 +17,7 @@ allowed-tools: Bash(git status:*), Bash(git diff:*), Bash(git rev-parse:*), Bash
 | 1 | Reads current branch, git status, and staged diff |
 | 2 | If nothing staged → offers to stage modified/new files from `git status` (see Auto-Stage Offer) |
 | 3 | **Test-coverage gate (STRICT)** — blocks if a changed production class has no matching test (see below) |
+| 3.5 | **Spec-conformance check (advisory)** — pipeline mode only: lists spec Behaviors with no `spec: B<n>`-tagged test; never blocks (see below) |
 | 4 | Proposes a semantic commit message and waits for confirmation — **does not auto-commit** (see Format below) |
 | 5 | Makes the commit on approval |
 | 6 | Gets the short commit hash via `git rev-parse --short HEAD` |
@@ -120,6 +121,28 @@ testable surface is waived by listing it with a written reason in a JSON file:
 
 This gate applies in every mode (interactive, non-interactive, and standalone).
 There is no blanket skip — the waiver requires naming the file and the reason.
+
+---
+
+## Spec-Conformance Check (advisory)
+
+Run right after the coverage gate, **only when `$SLUG` is set** (pipeline mode):
+
+```bash
+[ -n "$SLUG" ] && python3 ${CLAUDE_PLUGIN_ROOT}/lib/conformance.py check "$SLUG"
+```
+
+It reads the Behavior ids (`**B1**`, `**B2**`, …) from the spec's `## Behavior`
+section and the `spec: B<n>` tags in test lines **added on this branch** (since the
+merge-base with `base_branch`, committed or not, plus untracked test files), then
+prints the ids no test claims. Tags in unchanged lines don't count, so older
+features' tags can't satisfy this one.
+
+- Always exits 0 — **never blocks**, in any mode. Show its one-line output above the
+  commit-message proposal so the developer can add a tag or a test, or proceed.
+- Silent when the spec has no Behavior ids (specs drafted before ids existed) or on
+  any internal error.
+- Deterministic grep over the diff — no LLM review, no extra tokens.
 
 ---
 

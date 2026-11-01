@@ -22,6 +22,7 @@ Wipe `.specwork/` clean. This is the canonical cleanup command — run it after 
 | 4 | Lists every file in `.specwork/` that will be deleted |
 | 5 | Notes if spec was published to `docs/specs/` (preserved) |
 | 6 | Asks for confirmation |
+| 6.5 | Proposes durable rules from the closed spec for the service rules; writes only the approved ones, append-only (see Step 6.5) |
 | 7 | Deletes every file under `.specwork/_*/` |
 | 8 | On a feature branch: offers to delete the local branch and switch back to the parent |
 | 9 | Prints summary |
@@ -243,8 +244,55 @@ Combine all relevant warnings (open MR, closed MR, unmoved spec, discarded chang
 Delete all files in .specwork/? (y / n)
 ```
 
-- **y**: proceed to Step 7
+- **y**: proceed to Step 6.5
 - **n**: abort silently with `Canceled.`
+
+---
+
+## Step 6.5 — Promote Durable Rules (interactive only)
+
+The spec is about to be deleted. Before it goes, promote what the feature taught
+about the service into the service rules, so the next pipeline starts with it.
+
+**Skip this step entirely** when `SDD_NON_INTERACTIVE=1`, when Step 3 found the MR
+`closed` (abandoned work teaches no rules), or when `.specwork/_spec/<slug>-spec.md`
+does not exist.
+
+1. **Read only the spec** — `## Safe Constraints` and the resolved (`- [x]`) items in
+   `## Open Questions`. Do not re-read the diff or the code; this step must stay cheap.
+2. **Pick candidates.** Keep only feature-agnostic, durable invariants: business rules,
+   ownership/identity rules, idempotency or fallback contracts, the *why* behind a design
+   choice. Drop ticket-only decisions, dates, rollout notes, and anything already stated
+   in the rules files (the template's "Out of Scope (Do Not Add Here)" list applies).
+   At most **4** candidates; zero is a normal outcome — then print
+   `No durable rules to promote.` and go to Step 7.
+3. **Choose a target per candidate.** If `.claude/rules/*.md` exist, pick the topic file
+   whose subject matches, and a section heading inside it. Otherwise target
+   `.claude/service-rules.md` and one of its sections (`Business Invariants`,
+   `Fallback and Idempotency`, `Architecture Constraints`, `Historical Constraints`).
+4. **Check for conflicts.** If a candidate contradicts an existing rule, do **not**
+   propose it as a write — list it separately as a question for the user
+   (`⚠ Conflicts with "<existing rule>" in <file> — which one holds?`). Existing rules
+   are never edited, reworded, or removed by this step.
+5. **Ask once**, with a single multi-select `AskUserQuestion`: one option per candidate,
+   label = the rule, description = `<target file> § <section>`. Nothing is selected by
+   default.
+6. **Write only the approved ones**, one call per target file:
+
+   ```bash
+   python3 ${CLAUDE_PLUGIN_ROOT}/lib/promote.py apply "<rules-file>" "$SLUG" \
+     '[{"section": "Business Invariants", "rule": "<approved rule text>"}]'
+   ```
+
+   `promote.py` inserts each rule as a new bullet at the end of its section (creating the
+   section, or the file, if missing) with a provenance marker —
+   `- <rule> _(from spec <slug>, <YYYY-MM-DD>)_` — and **refuses to write** (exit 1) if any
+   pre-existing line would change. Hand-written rules and rationale are preserved
+   byte-for-byte; that guarantee is enforced in code, not left to this prose. On exit 1,
+   report it and continue to Step 7 without retrying.
+
+The rules file is left as an uncommitted change — `/sdd:close` never commits. Mention it
+in the Step 9 summary so the user commits it with their next change.
 
 ---
 
@@ -326,6 +374,9 @@ Branch:             <current_branch>             (kept as-is — delete it yours
 <if branch_id is none:>
 Ready to start a new feature with /sdd:start.
 ```
+
+<if Step 6.5 promoted rules:>
+Rules promoted:     <N> rule(s) → <file(s)>  (uncommitted — review and commit them)
 
 If changes were discarded, `git status` will be clean. Published specs in `docs/specs/` are preserved for permanent documentation reference.
 

@@ -128,11 +128,10 @@ Extract from spec:
 
 - summary
 - scope
-- behavior
+- behavior (with its `B<n>` ids, when present)
 - implementation context
-- constraints
-- testing requirements
-- acceptance criteria
+- expected change scope
+- safe constraints
 
 Apply rules from `rules.json` as hard constraints — it is the compact, feature-scoped checklist
 for this run.
@@ -382,6 +381,13 @@ Expected testing behavior:
 - If the change has no testable surface, note the reason explicitly before proceeding
 
 Do not generate excessive tests. Tests should be focused on the behavior described in the spec.
+
+**Tag tests with the Behavior they cover.** When the spec's `## Behavior` items carry ids
+(`**B1**`, `**B2**`, …), mark each test you write or change with the id(s) it verifies, in a
+comment or the test's display name: `// spec: B2`, `# spec: B1, B3`,
+`@DisplayName("spec: B2 - rejects null applicationId")`. `/sdd:commit` reads these tags from the
+lines added on this branch and reports any Behavior without one — a token-free conformance check.
+Skip tagging when the spec has no ids.
 
 ### Run Individual Tests
 

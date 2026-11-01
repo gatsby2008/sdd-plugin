@@ -16,7 +16,8 @@ One or two sentences describing what this feature does.
 
 ## Behavior
 
-1. Detailed, testable behavioral requirements.
+1. **B1** — Detailed, testable behavioral requirement. Each Behavior keeps a stable
+   id (`B1`, `B2`, …) that tests reference with a `spec: B<n>` tag.
 
 ## Implementation Context
 - Files, classes, endpoints, repositories, and services relevant to this feature.
