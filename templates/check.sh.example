@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
 #
-# Project validation script consumed by /sdd:commit and /sdd:mr.
+# Project validation script consumed by /sdd:mr (before push).
 #
 # Copy this file to <project-root>/commands/check.sh and customize for your
 # stack. The SDD pipeline runs `bash commands/check.sh` and treats:
-#   exit 0  → clean, continue (commit or push)
-#   exit !0 → stop, do not commit/push
+#   exit 0  → clean, continue (push)
+#   exit !0 → stop, do not push
 #
 # Goal: match what CI runs, so a green run locally implies a green run in CI.
 # Keep it deterministic — avoid network/randomness/cache reliance.

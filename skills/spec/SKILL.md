@@ -1,7 +1,7 @@
 ---
 name: spec
 description: Own the feature spec.md — draft it the first time from the source captured by /sdd:start, or refine an existing spec by feeding additional context (files, Jira tickets, pasted text, free text). Draft mode runs when no spec.md exists yet; refine mode integrates new context into an existing spec and is append-only on Open Questions. Refine with no arguments is a strict no-op. Runs triage on the first draft. Detects downstream staleness (plan.md, uncommitted changes) and only warns — never deletes downstream artifacts.
-argument-hint: "<files> | jira <ticket> | paste | <free text>"
+argument-hint: "<files> | jira <ticket> | paste | <free text> | --tier <trivial|focused|standard|high-risk|auto> \"<reason>\""
 allowed-tools: Read, Write, Edit, Bash(cat .specwork/_spec/*), Bash(cat .specwork/_state/*), Bash(cat ${CLAUDE_PLUGIN_ROOT}/templates/spec.md), Bash(cat ${CLAUDE_PLUGIN_ROOT}/templates/spec-frontend.md), Bash(cat ${CLAUDE_PLUGIN_ROOT}/lib/jira.sh), Bash(ls .specwork:*), Bash(git rev-parse:*), Bash(git status:*), Bash(test:*), Bash(python3:*), Bash(python3 ${CLAUDE_PLUGIN_ROOT}/lib/gates.py:*), Bash(python3 ${CLAUDE_PLUGIN_ROOT}/lib/triage.py:*), Bash(curl:*), Bash(printenv:*)
 ---
 
@@ -61,14 +61,14 @@ of the artifacts above are missing, abort with no writes.
 | 0  | Pipeline precondition — abort if `.specwork/` is missing or uninitialized via `gates.py precheck` |
 | 1  | Resolve the slug from `.specwork/_state/` |
 | 2  | Detect mode: draft (no spec.md) vs refine (spec.md exists) |
-| 2.5| No-op gate: refine mode **and** zero arguments → print no-op notice and exit, no write |
+| 2.5| No-op gate: refine mode **and** zero arguments → print no-op notice and exit, no write. Refine with **only** `--tier` → skip to Step 9 (override only, spec untouched) |
 | 3  | Verify required artifacts exist; abort with no writes if any are missing |
 | 4  | Parse `$ARGUMENTS` into input items (files, jira ticket, paste, free text) |
 | 5  | Fetch each input — read files, curl Jira via `lib/jira.sh`, capture pasted text |
 | 6  | **Draft:** write the first spec from source + template + context. **Refine:** integrate context into the current spec. |
 | 7  | Write the spec to `.specwork/_spec/<slug>-spec.md` (this bumps its mtime — downstream staleness is mtime-based) |
 | 8  | Append newly confirmed classes/repos/tests to `implementation-cache.json` (dedupe, append-only) |
-| 9  | **Draft only:** run `triage.py <slug>` now that the spec body has real content |
+| 9  | **Draft:** run `triage.py <slug>` now that the spec body has real content. **Any mode with `--tier`:** run it with the override |
 | 10 | **Refine only:** check downstream staleness — `plan.md` mtime, uncommitted git changes |
 | 11 | Print result (draft summary + triage, or categorized refine diff + warnings) |
 
@@ -181,6 +181,10 @@ Next:
 `/sdd:spec` called twice in a row with no args is a no-op the second time. This is
 what keeps `/sdd:plan` from seeing a spurious staleness bump.
 
+If the **only** argument is `--tier …` (see Step 9), this is not a no-op: skip
+Steps 3–8 and 10 — the spec is not read for integration and not rewritten, so its
+mtime and the plan's freshness are untouched — and go straight to Step 9.
+
 ---
 
 ## Step 3 — Verify Required Artifacts
@@ -207,6 +211,7 @@ item independently:
 
 | Pattern | Type | Action |
 |---------|------|--------|
+| `--tier <level> "<reason>"` | tier override | Not context — consumed by Step 9, never folded into the spec |
 | Starts with `jira ` followed by a ticket key (e.g. `PROJ-1234`, `IR-122`) | jira | Fetch in Step 5 |
 | Equals `paste` (or starts with `paste:`) | paste | Read pasted text |
 | Contains `/` or ends in `.java`/`.kt`/`.ts`/`.tsx`/`.js`/`.py`/`.yaml`/`.yml`/`.json` | file | Read the file in Step 5 |
@@ -372,7 +377,7 @@ python3 ${CLAUDE_PLUGIN_ROOT}/lib/gates.py merge-cache <slug> '{"similar_classes
 
 ---
 
-## Step 9 — Triage (draft mode only)
+## Step 9 — Triage (draft mode, or any mode with `--tier`)
 
 On the first draft, run triage now that the spec body has real content. Triage
 classifies on `## Summary` + `## Behavior`; until `/sdd:spec` draft writes the
@@ -387,6 +392,29 @@ This writes `.specwork/_state/<slug>-path.json` with one of four advisory
 classifications (`trivial` / `focused` / `standard` / `high-risk`) and the
 recommended pipeline path. Print the result (type, complexity, path, reason).
 The path is advisory — the developer can override at any step.
+
+### Forcing the tier (`--tier`)
+
+Triage is a keyword classifier and can misfire — a Behavior that says "does
+**not** publish to Kafka" still matches the async/eventing signal and lands in
+`high-risk`, which makes the plan mandatory. To correct it explicitly:
+
+```bash
+python3 ${CLAUDE_PLUGIN_ROOT}/lib/triage.py <slug> --tier <trivial|focused|standard|high-risk> --reason "<reason>"
+python3 ${CLAUDE_PLUGIN_ROOT}/lib/triage.py <slug> --tier auto      # drop the override
+```
+
+- **The reason is mandatory.** If the user gave `--tier` without one, ask for it
+  (interactive) or stop and report it (non-interactive) — never invent one.
+  `triage.py` exits 2 and writes nothing when the reason is missing.
+- The forced tier drives everything downstream: `path`, `plan_required` (so the
+  `/sdd:implement` plan-required gate follows it, both ways), and the
+  `/sdd:commit` high-risk auditor. The automatic tier and its reason stay in
+  `path.json` under `override` (`tier`, `reason`, `auto_tier`, `auto_why`).
+- The override is sticky: a later triage run without `--tier` (e.g. after a
+  re-draft) re-applies it. `--tier auto` returns to the automatic tier.
+- Print the triage summary; it includes an `Override:` line with the automatic
+  tier so the decision stays visible.
 
 ---
 

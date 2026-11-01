@@ -179,6 +179,29 @@ class TestMainDoesNotCreateSpec(unittest.TestCase):
         # spec_file is declared (path) for /sdd:spec to write.
         self.assertIn("demo-spec.md", out["spec_file"])
 
+    def _run_start(self, slug_arg, branch="feature/PROJ-123"):
+        import subprocess
+        return subprocess.run(
+            ["python3", str(Path(LIB_DIR) / "start.py"), "--slug", slug_arg, "--ticket", "none",
+             "--input-type", "freetext", "--branch", branch, "--base-branch", "main"],
+            capture_output=True, text=True,
+        )
+
+    def test_main_rejects_non_canonical_slug_without_writing(self):
+        for bad in ["PROJ-123", "IR-70.1", "my_slug", "-"]:
+            result = self._run_start(bad)
+            self.assertEqual(result.returncode, 2, bad)
+            self.assertIn("lib/slug.py", result.stderr)
+        self.assertFalse((self.tmp / ".specwork").exists())
+
+    def test_main_accepts_slug_py_output(self):
+        import slug as slugs
+        canonical = slugs.slug_from_branch("feature/PROJ-123")
+        self.assertEqual(canonical, "proj-123")
+        result = self._run_start(canonical)
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertTrue((self.tmp / ".specwork" / "_state" / "proj-123-state.json").exists())
+
     def test_main_persists_source_body_file(self):
         import subprocess
         start_py = Path(LIB_DIR) / "start.py"

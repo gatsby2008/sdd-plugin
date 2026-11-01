@@ -27,7 +27,7 @@ Reference material for `/sdd:start`. Schemas, templates, and example output. `SK
 }
 
 Fields:
-- `path_file`: Points to the advisory pipeline path (written by triage classification — see SKILL.md § Triage Classification).
+- `path_file`: Points to the advisory pipeline path (written by triage classification in `/sdd:spec` draft mode — see `skills/spec/SKILL.md` § Step 9).
 
 `implementation_cache_file` points to the feature-local implementation memory artifact.
 
@@ -113,9 +113,9 @@ Next:    /sdd:spec (draft the spec from the captured source)
 Branch:  feature/IR-45  (created from feature/IR-40)
 Base:    feature/IR-40
 Source:  JIRA: IR-45
-State:   .specwork/_state/feature-ir-45-state.json
-Rules:   .specwork/_state/feature-ir-45-rules.json
-Cache:   .specwork/_state/feature-ir-45-implementation-cache.json
+State:   .specwork/_state/ir-45-state.json
+Rules:   .specwork/_state/ir-45-rules.json
+Cache:   .specwork/_state/ir-45-implementation-cache.json
 
 Next:    /sdd:spec (draft the spec from the captured source)
 ```
@@ -126,9 +126,9 @@ Next:    /sdd:spec (draft the spec from the captured source)
 Branch:  bugfix/existing-work  (pipeline initialized on current branch)
 Base:    bugfix/existing-work
 Source:  free-text: "add validation to login form"
-State:   .specwork/_state/bugfix-existing-work-state.json
-Rules:   .specwork/_state/bugfix-existing-work-rules.json
-Cache:   .specwork/_state/bugfix-existing-work-implementation-cache.json
+State:   .specwork/_state/existing-work-state.json
+Rules:   .specwork/_state/existing-work-rules.json
+Cache:   .specwork/_state/existing-work-implementation-cache.json
 
 Next:    /sdd:spec (draft the spec from the captured source)
 ```

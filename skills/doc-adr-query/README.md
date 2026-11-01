@@ -91,7 +91,7 @@ The narrowing keeps responses faster and avoids spending tokens on unrelated ADR
 
 ## Registry location
 
-Defaults to `~/.claude/adr-registry/`. Override with `CLAUDE_DOC_HOME` to point at a different folder (e.g., a cloned GitLab repo for team sharing) — the skill reads from `$CLAUDE_DOC_HOME/adr-registry/`. See the bundle README's *Team-shared registry* section for the full setup guide.
+Defaults to `~/.claude/adr-registry/`. Override with `CLAUDE_DOC_HOME` to point at a different folder (e.g., a cloned GitLab repo for team sharing) — the skill reads from `$CLAUDE_DOC_HOME/adr-registry/`. See *Team-shared registry* in the plugin's `docs/doc-overview.md` for the full setup guide.
 
 ## Limitations
 

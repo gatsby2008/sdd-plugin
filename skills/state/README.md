@@ -33,10 +33,10 @@ Use it any time you need quick orientation.
 
 ```text
 Branch: feature/PROJ-15535
-Spec:   ✓ PROJ-15535-spec.md (2 open / 1 resolved OQs)
-        `/abs/path/repo/.specwork/_spec/PROJ-15535-spec.md:42`  ← Open Questions
-Plan:   ✓ PROJ-15535-plan.md (1 open OQ)
-        `/abs/path/repo/.specwork/_plan/PROJ-15535-plan.md:88`  ← Open Questions
+Spec:   ✓ proj-15535-spec.md (2 open / 1 resolved OQs)
+        `/abs/path/repo/.specwork/_spec/proj-15535-spec.md:42`  ← Open Questions
+Plan:   ✓ proj-15535-plan.md (1 open OQ)
+        `/abs/path/repo/.specwork/_plan/proj-15535-plan.md:88`  ← Open Questions
 Tree:   clean
 Next:   /sdd:plan (recommended, can skip)
         /sdd:implement

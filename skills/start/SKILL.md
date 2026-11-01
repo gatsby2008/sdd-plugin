@@ -247,12 +247,22 @@ Handling each answer:
   a valid git branch name before running `git checkout -b`; if invalid, surface the error and
   stop.
 
-**Slug derivation (ALWAYS after branch is confirmed):** The slug passed to `start.py` must
-be derived from the **final chosen branch name**, not from the original description or ticket.
-Strip the leading type prefix (`feature/`, `bugfix/`, `hotfix/`, `release/`) and use the
-remainder as the slug. Examples: `feature/test2` → `test2`;
-`feature/fix-duplicate-leads` → `fix-duplicate-leads`; `feature/PROJ-123` → `PROJ-123`.
-This guarantees that artifact file names always match the branch name.
+**Slug derivation (ALWAYS after branch is confirmed, before any `<slug>` path is written):**
+derive the slug from the **final chosen branch name** — not from the original description or
+ticket — with the shared helper, and use its `slug` field everywhere below (the Jira
+`source.md` write and both `start.py` calls):
+
+```bash
+SLUG="$(python3 ${CLAUDE_PLUGIN_ROOT}/lib/slug.py "<final-branch>" | python3 -c 'import json,sys; print(json.load(sys.stdin)["slug"])')"
+```
+
+It strips the type prefix (`feature/`, `bugfix/`, `hotfix/`, `release/`), lowercases, and turns
+any other non-alphanumeric run into a hyphen: `feature/test2` → `test2`;
+`feature/fix-duplicate-leads` → `fix-duplicate-leads`; `feature/PROJ-123` → `proj-123`;
+`feature/IR-70.1` → `ir-70-1`. This is the same derivation `/sdd:resync` uses, so a pipeline
+keeps one slug form across a rename. `start.py` rejects any other form (exit 2, nothing written)
+— never hand-craft the slug. If it comes out empty, stop and tell the user the branch name is
+not slug-friendly.
 
 Suggested names follow `feature/<TICKET>` or `feature/<slugified-description>`.
 Example: on `feature/IR-40`, starting `/sdd:start IR-45` suggests `feature/IR-45` so the new

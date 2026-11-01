@@ -141,8 +141,8 @@ commands create `service-catalog/` and `adr-registry/` subdirectories under it.
 
 ### 5) Project validation script (`commands/check.sh`)
 
-`/sdd:commit` and `/sdd:mr` shell out to `bash commands/check.sh` in the project
-root to validate the code before committing and pushing. The pipeline treats
+`/sdd:mr` shells out to `bash commands/check.sh` in the project root to validate
+the code before pushing (`/sdd:commit` does not run it). The pipeline treats
 `exit 0` as clean and any non-zero exit as a stop signal.
 
 This script is **project-owned** — each consumer repo provides one, commits it,

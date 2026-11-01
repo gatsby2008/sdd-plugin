@@ -19,7 +19,7 @@ This pipeline ships as the **sdd** Claude Code plugin; installing it brings
 everything at once — there is no per-tool selection:
 
 ```text
-/plugin marketplace add <git-url-of-this-repo>
+/plugin marketplace add https://github.com/gatsby2008/sdd-plugin-public
 /plugin install sdd@gatsby
 ```
 
@@ -27,12 +27,13 @@ That pulls in everything the pipeline relies on:
 
 - the **Java reviewers** → `sdd:java:quality-reviewer`, `sdd:java:security-reviewer`, plus the Java review packs (`jpa-patterns`, `concurrency-review`, `api-contract-review`, `logging-patterns`)
 - the **UI reviewers** → `sdd:ui:quality-reviewer`, `sdd:ui:a11y-reviewer`
-- the **`doc` bundle** → the `/doc-*` and `/adr-*` commands
+- the **documentation registry** → the `/sdd:doc-*` commands and `/sdd:ask` (see [doc-overview.md](doc-overview.md))
 
-See the repo-root `README.md` for `--check` / `--prune` / `--uninstall`.
+Update or remove it with Claude Code's own `/plugin` command (`/plugin update sdd`,
+`/plugin uninstall sdd`); the plugin ships no installer of its own.
 
 First-time credential and project setup (Python, Jira, MR config, `glab`,
-`check.sh`) lives in **[docs/setup.md](docs/setup.md)**.
+`check.sh`) lives in **[setup.md](setup.md)**.
 
 ---
 
@@ -40,7 +41,7 @@ First-time credential and project setup (Python, Jira, MR config, `glab`,
 
 ### Just want to code? (vibe coding)
 
-Not every change needs the full spec-driven pipeline. Four commands are
+Not every change needs the full spec-driven pipeline. Five commands are
 **standalone** — they need no `.specwork/` state, no spec, no plan, and work on
 any branch in any repo:
 
@@ -81,9 +82,10 @@ Or drive it non-interactively through to the MR in one call:
 
 | Doc | Contents |
 |-----|----------|
-| **[docs/pipeline.md](docs/pipeline.md)** | Full flow diagram, per-command reference, implementation cadence, context switching, and how to give good input |
-| **[docs/concepts.md](docs/concepts.md)** | Open Questions, gates, implementation cache, handoff, and artifacts (`.specwork/`) |
-| **[docs/setup.md](docs/setup.md)** | Prerequisites and one-time setup: Jira, MR config, `glab`, doc registry, `check.sh` |
+| **[pipeline.md](pipeline.md)** | Full flow diagram, per-command reference, implementation cadence, context switching, and how to give good input |
+| **[concepts.md](concepts.md)** | Open Questions, gates, implementation cache, handoff, and artifacts (`.specwork/`) |
+| **[doc-overview.md](doc-overview.md)** | The documentation registry: `/sdd:doc-*`, `/sdd:ask`, team-shared registry |
+| **[setup.md](setup.md)** | Prerequisites and one-time setup: Jira, MR config, `glab`, doc registry, `check.sh` |
 
 ---
 

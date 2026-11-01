@@ -15,6 +15,8 @@ Own `.specwork/_spec/<slug>-spec.md`. `/sdd:start` captures the raw source; `/sd
 /sdd:spec paste                                    # paste free text
 /sdd:spec "PII must be masked in logs"             # inline free text
 /sdd:spec OrderController.java jira IR-122 "use UUID for personId"   # mix inputs
+/sdd:spec --tier standard "Behavior only says it does NOT publish to Kafka"   # force the triage tier
+/sdd:spec --tier auto                              # back to the automatic tier
 ```
 
 ## When to use

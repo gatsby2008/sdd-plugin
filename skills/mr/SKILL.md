@@ -206,7 +206,7 @@ Before pushing, run the project's standard test command:
 bash commands/check.sh
 ```
 
-This script is project-provided — see SDD README §"Project validation script"
+This script is project-provided — see the plugin's `docs/setup.md` §5 "Project validation script"
 for what it should contain. A template ships at
 `${CLAUDE_PLUGIN_ROOT}/templates/check.sh.example`.
 
@@ -270,7 +270,7 @@ if [ -n "$SPEC_FILE" ] && [ -f "$SPEC_FILE" ] && grep -qE '^- \[x\]' "$SPEC_FILE
   echo ""
   echo "Tip: this spec had Open Questions resolved during planning."
   echo "Consider running /sdd:doc-adr open-questions to capture those decisions"
-  echo "as ADRs in docs/adr/ before the MR is merged."
+  echo "as ADRs in the central ADR registry before the MR is merged."
 fi
 ```
 

@@ -125,7 +125,7 @@ Pipeline: feature/PROJ-15535  [blocked]
 ✗  /sdd:implement     blocked — 2 unresolved Open Questions
 
 Next step:
-  Resolve open questions in `/abs/path/repo/.specwork/_spec/PROJ-15535-spec.md:42`
+  Resolve open questions in `/abs/path/repo/.specwork/_spec/proj-15535-spec.md:42`
 
   Unresolved:
     - [ ] #1 Should lookup use personUuid only, or personUuid + collateral?
@@ -255,7 +255,7 @@ Pipeline: feature/PROJ-15535  [blocked]
 ✗  /sdd:implement     blocked — 2 unresolved Open Questions
 
 Next step:
-  Resolve open questions in `/abs/path/repo/.specwork/_spec/PROJ-15535-spec.md:42`
+  Resolve open questions in `/abs/path/repo/.specwork/_spec/proj-15535-spec.md:42`
 
   Unresolved:
     - [ ] #1 Should lookup use personUuid only, or personUuid + collateral?

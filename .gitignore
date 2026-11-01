@@ -11,8 +11,5 @@ __pycache__/
 # Local-only pipeline artifacts (created in target repos, never in this one)
 .specwork/
 
-# Local review output
-docs/reviews/
-
 # Claude Code local settings
 .claude/
