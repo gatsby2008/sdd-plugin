@@ -65,7 +65,7 @@ In non-interactive mode the only allowed pauses are: the Open Questions gate, th
 git rev-parse --abbrev-ref HEAD
 ```
 
-Extract `slug` from the branch name (strip the type prefix) and normalize it to match the files under `.specwork/` (REF § Slug examples).
+Extract `slug` from the branch name: strip the type prefix and **keep the case** — never lowercase it yourself. It must equal the file prefix under `.specwork/_state/` (REF § Slug examples).
 
 ---
 
