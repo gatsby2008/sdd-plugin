@@ -16,7 +16,7 @@ One or two sentences describing what this UI feature does for the user.
 
 ## Behavior
 
-1. Detailed, testable behavioral requirements — user-visible interactions,
+1. **B1** — Detailed, testable behavioral requirement — user-visible interactions,
    states (loading / empty / error / success), and validation.
 
 ## Components

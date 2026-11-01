@@ -310,7 +310,10 @@ input** and the template as the section structure. Rules:
 4. Open Questions are numbered (`#1`, `#2`, …) and use the format
    `- [ ] **#N** <question>`. List every unresolved ambiguity you would
    otherwise have to guess.
-5. NEVER touch `.specwork/_spec/<slug>-source.md` — it is immutable.
+5. Each `## Behavior` item starts with a stable id: `1. **B1** — <behavior>`,
+   numbered `B1`, `B2`, … in order. Tests reference these ids (`spec: B<n>`) and
+   `/sdd:commit` reports any id no test covers.
+6. NEVER touch `.specwork/_spec/<slug>-source.md` — it is immutable.
 
 If context (files, jira, free text) was supplied, fold it into the relevant
 sections as you draft.
@@ -332,6 +335,10 @@ the diff), then integrate the new `CONTEXT`:
 Hard preservation rules (refine):
 - **Never delete user-authored content.** OQ resolutions append `— resolved:`;
   they never remove the question text.
+- **Never renumber or reuse Behavior ids.** A new Behavior gets the next unused
+  `B<n>`; tests already tagged with an id must keep pointing at the same Behavior.
+  Specs drafted before ids existed stay as they are — do not add ids on refine
+  unless the input adds Behaviors (then id only the new ones).
 - **Never invent class names.** Use the symbol verbatim, or write `[UNKNOWN]`.
 - **Never modify `## Summary` or the title** unless the input explicitly
   contradicts them — if it does, surface the conflict as a new Open Question
