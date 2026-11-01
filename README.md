@@ -45,7 +45,7 @@ checks for it and, on Windows + Git Bash, drops a `python3` shim when only
 ```
 
 Plus `/sdd:auto` (non-interactive driver that runs straight through to the open MR) and the standalone
-helpers (`/sdd:commit`, `/sdd:mr`, `/sdd:code-review`, `/sdd:undo`) that work on
+helpers (`/sdd:commit`, `/sdd:mr`, `/sdd:code-review`, `/sdd:mr-review`, `/sdd:undo`) that work on
 any branch with no spec or setup.
 
 ## Layout
@@ -79,7 +79,8 @@ helpers via `${CLAUDE_PLUGIN_ROOT}/lib/…`.
 
 ## Docs & tests
 
-- `docs/pipeline.md`, `docs/concepts.md`, `docs/setup.md` — full reference.
+- `docs/sdd-overview.md` — entry point; `docs/pipeline.md`, `docs/concepts.md`,
+  `docs/setup.md`, `docs/doc-overview.md` — full reference.
 - `skills/<name>/SKILL.md` — per-command instructions.
 
 ```bash

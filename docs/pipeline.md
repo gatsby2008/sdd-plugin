@@ -8,17 +8,17 @@ For setup see [setup.md](setup.md); for the gates and artifacts it relies on see
 
 ## Pipeline Flow
 
-The main flow — `/sdd:start → /sdd:spec → /sdd:plan → /sdd:implement` (with the
+The main flow is `/sdd:start → /sdd:spec → /sdd:plan → /sdd:implement` (with the
 low/medium vs. high-risk test branch) `→ /sdd:commit → /sdd:code-review →
-/sdd:mr → /sdd:mr-address → /sdd:close` — is diagrammed in the plugin
-[README](../README.md#the-pipeline). The commands below run **independently** of
+/sdd:mr → /sdd:mr-address → /sdd:close`; each step is described under
+[Pipeline Commands](#pipeline-commands). The commands below run **independently** of
 that flow, on any branch, any time:
 
 ```
 INDEPENDENT: Documentation & Knowledge (any branch, any time)
-  (standalone quality commands — /sdd:commit, /sdd:mr, /sdd:code-review, /sdd:mr-review —
-   are listed in the "Just want to code?" section of the README)
-  (all doc/adr commands below come from the `doc` bundle, installed with the same plugin)
+  (standalone quality commands — /sdd:commit, /sdd:mr, /sdd:code-review, /sdd:mr-review,
+   /sdd:undo — are listed in the "Just want to code?" section of sdd-overview.md)
+  (the doc commands below ship in the same plugin — see doc-overview.md)
   /sdd:doc-catalog       — generate service catalog + store in central registry (or `list`)
   /sdd:doc-catalog-query — cross-service architecture queries against the registry
   /sdd:doc-adr           — capture an architectural decision + store in central registry (or `list`)
@@ -27,6 +27,8 @@ INDEPENDENT: Documentation & Knowledge (any branch, any time)
   /sdd:doc-spec-query    — cross-feature queries against stored specs
   /sdd:doc-investigation       — capture a session investigation + store in central registry
   /sdd:doc-investigation-query — recall/recurrence queries over captured investigations
+  /sdd:ask               — unified query across all four registries (+ wiki layer when present)
+  /sdd:doc-ingest        — compile raw/ registries into the wiki/ layer (two-layer vault only)
 
 INDEPENDENT: Java Review Packs (deep-dive reviewers, any branch, any time)
   /sdd:jpa-patterns       — JPA/Hibernate review (N+1, lazy loading, transactions, fetching)
@@ -164,6 +166,7 @@ up front and the rest of the pipeline flows.
 - Changes accumulate in working tree (no commits between steps)
 - **Strict gates** (abort with no writes):
   - Unresolved `## Open Questions` in spec.md or plan.md
+  - Triage tier `high-risk` and no `plan.md` yet — run `/sdd:plan` first
   - `plan.md` exists and is older than `spec.md` (typically after `/sdd:spec` or a manual spec edit) — re-run `/sdd:plan` to regenerate, or `rm` the plan to fall back to discovery from the spec
 - Ends with a complexity assessment and recommended next phase:
   - Low/isolated → `/sdd:commit`

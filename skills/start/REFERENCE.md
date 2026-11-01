@@ -27,7 +27,7 @@ Reference material for `/sdd:start`. Schemas, templates, and example output. `SK
 }
 
 Fields:
-- `path_file`: Points to the advisory pipeline path (written by triage classification — see SKILL.md § Triage Classification).
+- `path_file`: Points to the advisory pipeline path (written by triage classification in `/sdd:spec` draft mode — see `skills/spec/SKILL.md` § Step 9).
 
 `implementation_cache_file` points to the feature-local implementation memory artifact.
 

@@ -164,7 +164,7 @@ The skill will regenerate with that context.
 ## Next: Test Validation and Push
 
 After committing, you're ready for `/sdd:mr`, which:
-1. Runs full test suite validation via `bash commands/check.sh` (project-provided; see SDD README §"Project validation script" — template at `${CLAUDE_PLUGIN_ROOT}/templates/check.sh.example`)
+1. Runs full test suite validation via `bash commands/check.sh` (project-provided; see `docs/setup.md` §5 "Project validation script" — template at `${CLAUDE_PLUGIN_ROOT}/templates/check.sh.example`)
 2. Pushes the branch if tests pass
 3. Creates the merge request
 
