@@ -19,7 +19,7 @@ This pipeline ships as the **sdd** Claude Code plugin; installing it brings
 everything at once — there is no per-tool selection:
 
 ```text
-/plugin marketplace add https://github.com/gatsby2008/sdd-plugin-public
+/plugin marketplace add https://github.com/gatsby2008/sdd-plugin
 /plugin install sdd@gatsby
 ```
 

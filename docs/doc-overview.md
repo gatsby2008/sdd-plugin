@@ -177,7 +177,7 @@ These commands ship inside the **sdd** plugin and install with the rest of the
 pipeline via `/plugin`:
 
 ```text
-/plugin marketplace add https://github.com/gatsby2008/sdd-plugin-public
+/plugin marketplace add https://github.com/gatsby2008/sdd-plugin
 /plugin install sdd@gatsby
 ```
 
