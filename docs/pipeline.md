@@ -186,6 +186,7 @@ up front and the rest of the pipeline flows.
 - Auto-stages modified/new files from `git status` when nothing is staged
 - **Test-coverage gate (strict)**: blocks the commit if a changed production class has no matching test (Java `*Test`/`*IT`, frontend `*.test`/`*.spec`). Pure data/wiring types (DTOs, config, entities, barrels) are not flagged. Waive a genuinely untestable class — with a written reason — in `.specwork/_test/<slug>-coverage-waivers.json` (or `.sdd-coverage-waivers.json` at the repo root when standalone)
 - **Spec-conformance check (advisory)**: reports spec Behaviors (`B1`, `B2`, …) with no test tagged `spec: B<n>` in lines added on the branch — never blocks
+- **High-risk auditor (advisory)**: on `high-risk` pipelines only, runs `/sdd:code-review` automatically once per distinct staged diff (receipt in `_review/<slug>-audit.json`) — never blocks
 - Generates a semantic commit message; user approves before commit
 
 ### `/sdd:code-review` (optional)
