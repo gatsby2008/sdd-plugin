@@ -94,6 +94,70 @@ beneficio/ruptura: un solo renombre y ningún acoplamiento de invocación
 ### Esfuerzo
 A: **L** · B: **M** · C: **M** (8 skills × medio día, mecánico, mismo método que el piloto).
 
+### Anexo — Repensar la familia de docs antes de separarla
+
+Revisión posterior de la recomendación. Mover los 10 skills de docs tal como
+están a otro plugin cambia el prefijo de 10 comandos y conserva su redundancia.
+El renombre debería ocurrir **una sola vez, con la forma final**.
+
+**Por qué el registro merece un plugin propio**
+
+- Tiene identidad propia: se usa en cualquier repo (incluso ajeno, sin pipeline),
+  se comparte en equipo vía `$CLAUDE_DOC_HOME` y su ciclo de vida no es el de una
+  feature.
+- El acoplamiento con el pipeline es débil: ningún skill del pipeline *invoca* a un
+  `doc-*`. Los une una escritura en disco (`/sdd:mr` → `lib/spec-publish.sh` →
+  `spec-registry/`), dos sugerencias en texto (`/sdd:mr` → `/sdd:doc-adr`,
+  `/sdd:whatnext`) y `lib/service-name.sh`.
+- Esa unión se resuelve tratando el **formato del registro como contrato**
+  documentado (ruta, nombre de archivo, clave de servicio), que ambos plugins
+  respetan sin depender uno del otro.
+
+**Redundancia actual**
+
+| Skill | Palabras | Situación |
+|---|---:|---|
+| `doc-catalog-query` | 1 024 | `/sdd:ask` declara que lo reemplaza ("Supersedes the per-registry doc-*-query commands") y ya tiene `type:catalog`. Capacidad propia: índice de topics/colas (Step 2.5) para "¿quién consume X?" |
+| `doc-adr-query` | 971 | Reemplazado por `ask type:adr`. Capacidad propia: detección del servicio objetivo |
+| `doc-spec-query` | 1 078 | Reemplazado por `ask type:spec`. Ídem |
+| `doc-investigation-query` | 1 174 | Reemplazado por `ask type:investigation`. Ídem |
+| `doc-spec` | 1 112 | Solo copia un archivo al registro o lo lista; candidato a modo de otro comando |
+
+Los cuatro `*-query` suman ~4 250 palabras y cuatro descripciones que se cargan
+en cada sesión, para una función que `ask` ya cubre. Antes de quitarlos, sus
+capacidades propias deben pasar a `ask` (un REFERENCE.md por tipo, con el método
+del piloto de `implement`).
+
+**Forma propuesta: ~6 skills en lugar de 10.** `catalog`, `adr`,
+`investigation`, `spec`, `ask`, `ingest`. Con un prefijo de plugin propio el
+`doc-` del nombre sobra: `/<plugin>:adr` en vez de `/sdd:doc-adr`. El nombre del
+plugin queda por decidir.
+
+**Plan en tres pasos**
+
+| Paso | Qué | Rompe algo | Esfuerzo |
+|---|---|---|---|
+| 1. Consolidar dentro de `sdd` | Llevar a `ask` el índice de topics/colas y la detección de servicio objetivo; comparar respuestas de `ask` vs cada `*-query` con preguntas reales | No | **M** |
+| 2. Quitar los cuatro `*-query` | Stubs de una versión que redirigen a `/sdd:ask type:…` | Borra skills (requiere OK) | **S** |
+| 3. Separar el registro | Mover los ~6 skills al plugin nuevo; documentar el contrato del registro; sugerencias condicionales en `/sdd:mr` y `/sdd:whatnext`; stubs en `sdd` que indican dónde se movió cada comando | Renombra comandos | **M** |
+
+**Riesgos**
+
+- *Renombre visible* (`/sdd:doc-adr` → `/<plugin>:adr`): memoria muscular, docs
+  y notas del registro que citen comandos. Se mitiga con los stubs del paso 3.
+- *Calidad de `ask`*: si una pregunta de catálogo responde peor que con
+  `doc-catalog-query`, quitarlo es una regresión. El paso 1 debe demostrar
+  paridad antes del paso 2.
+- *`service-name.sh` duplicado*: si las dos copias derivan claves distintas, los
+  specs del pipeline y los ADR del mismo servicio caen en carpetas distintas del
+  registro. Requiere un test de paridad entre ambas copias.
+
+**Recomendación revisada.** Reemplaza a "C ahora, B después": **consolidar y
+separar el registro, en ese orden.** El paso 1 se puede hacer ya sin romper nada;
+los pasos 2 y 3 borran o renombran comandos y necesitan decisión explícita. Las
+mejoras de C (adelgazar SKILL.md grandes y las descripciones de los agentes)
+siguen valiendo para el pipeline.
+
 ---
 
 ## 5. Specs que sobreviven a la feature
