@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 #
-# Project validation script consumed by /sdd:commit and /sdd:mr.
-#   exit 0  → clean, continue (commit or push)
-#   exit !0 → stop, do not commit/push
+# Project validation script consumed by /sdd:mr (before push).
+#   exit 0  → clean, continue (push)
+#   exit !0 → stop, do not push
 #
 # This repo is the SDD plugin itself: Python helpers under lib/ plus markdown
 # skills. Validation = the lib unit suite + the end-to-end smoke script.

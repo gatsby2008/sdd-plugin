@@ -59,6 +59,6 @@ Do not create for:
 
 ## Quality Gates
 
-- `bash commands/check.sh` must pass before committing (`/sdd:commit`) and again before pushing (`/sdd:mr`). The project provides this script (see `docs/setup.md` §5 "Project validation script" in the plugin); a template lives at `${CLAUDE_PLUGIN_ROOT}/templates/check.sh.example`.
+- `bash commands/check.sh` must pass before pushing (`/sdd:mr`). It is not required before committing — `/sdd:commit` does not run it. The project provides this script (see `docs/setup.md` §5 "Project validation script" in the plugin); a template lives at `${CLAUDE_PLUGIN_ROOT}/templates/check.sh.example`.
 - If the project is non-Gradle, the script should run the equivalent test command (`npm test`, `pytest`, `mvn verify`, etc.). The template auto-detects the common stacks.
-- Failed quality checks block progression — do not commit or push on failure.
+- Failed quality checks block progression — do not push on failure.
