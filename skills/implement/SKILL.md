@@ -194,7 +194,7 @@ Rules:
 
 ## Step 3.4 — Plan Required Gate (STRICT, high-risk only)
 
-High-risk / architectural work must go through `/sdd:plan` before any code is written — the one place the otherwise-optional plan step becomes mandatory. Triage stamps `plan_required: true` into `.specwork/_state/<slug>-path.json` for the high-risk tier; trivial, focused, and standard tiers keep the optional plan step (the vibe-coding path is preserved).
+High-risk / architectural work must go through `/sdd:plan` before any code is written — the one place the otherwise-optional plan step becomes mandatory. Triage stamps `plan_required: true` into `.specwork/_state/<slug>-path.json` for the high-risk tier; trivial, focused, and standard tiers keep the optional plan step (the vibe-coding path is preserved). A tier forced with `/sdd:spec --tier` wins over the automatic one, in both directions — the gate reads it from `path.json`.
 
 Skip this gate silently when there is no `path.json` (a pipeline triaged before this field existed) or the tier is not high-risk — the check returns pass in those cases.
 
@@ -216,6 +216,11 @@ then re-run /sdd:implement.
 
   /sdd:plan
   /sdd:implement
+
+If the classification is wrong (e.g. the spec only says it does NOT publish an
+event), force the tier with a reason instead:
+
+  /sdd:spec --tier standard "<why this is not high-risk>"
 ```
 
 Rules:

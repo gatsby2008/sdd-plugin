@@ -61,7 +61,7 @@ rather than guessing; the two marked *(advisory)* only report and never block.
 | Gate | Where | Rule |
 |---|---|---|
 | **Open Questions** | `/sdd:plan`, `/sdd:implement` | Any unchecked `- [ ]` in `spec.md` (or `plan.md`) blocks the step |
-| **Plan required** | `/sdd:implement` | Only for pipelines triaged `high-risk` (`plan_required` in `_state/<slug>-path.json`): blocks until `plan.md` exists. Other tiers keep the plan optional |
+| **Plan required** | `/sdd:implement` | Only for pipelines triaged `high-risk` (`plan_required` in `_state/<slug>-path.json`): blocks until `plan.md` exists. Other tiers keep the plan optional. A tier forced with `/sdd:spec --tier <level> "<reason>"` wins, both ways; the automatic tier stays recorded under `override` |
 | **Plan staleness** | `/sdd:implement` | If `plan.md` exists and is older than `spec.md` (`spec.md` mtime > `plan.md` mtime — typically after `/sdd:spec` or a manual spec edit), the step blocks. Re-run `/sdd:plan`, or `rm` the plan to fall back to inline discovery |
 | **Test coverage** | `/sdd:commit` + `PreToolUse` hook | A changed production class (Java `src/main/*.java`, frontend `*.tsx/.ts`) with no matching test (`*Test`/`*IT`, `*.test`/`*.spec`) blocks the commit. DTOs, config, entities, and barrels are excluded. The only escape is a per-class waiver-with-reason in `.specwork/_test/<slug>-coverage-waivers.json` (pipeline) or `.sdd-coverage-waivers.json` (standalone) |
 | **Spec conformance** *(advisory)* | `/sdd:commit` | Lists spec Behaviors (`**B1**`, `**B2**`, … in `## Behavior`) that no test tags with `spec: B<n>` in lines added on the branch. Never blocks; silent for specs without ids. Deterministic grep (`lib/conformance.py`) — no LLM review |

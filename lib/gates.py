@@ -202,6 +202,9 @@ def plan_required(slug, spec_dir=SPECWORK):
     keep the optional plan step (the vibe-coding path). Returns False when
     ``path.json`` is absent (pipelines triaged before this field existed) or when
     a plan already exists.
+
+    A tier override (``/sdd:spec --tier``) wins over the automatic result: when
+    ``path.json`` carries an ``override`` block, its ``tier`` alone decides.
     """
     path_json = Path(spec_dir) / "_state" / f"{slug}-path.json"
     if not path_json.exists():
@@ -210,7 +213,12 @@ def plan_required(slug, spec_dir=SPECWORK):
         data = json.loads(path_json.read_text(encoding="utf-8"))
     except Exception:
         return False
-    if not data.get("plan_required"):
+    override = data.get("override")
+    if isinstance(override, dict) and override.get("tier"):
+        required = override["tier"] == "high-risk"
+    else:
+        required = bool(data.get("plan_required"))
+    if not required:
         return False
     plan_file = Path(spec_dir) / "_plan" / f"{slug}-plan.md"
     return not plan_file.exists()

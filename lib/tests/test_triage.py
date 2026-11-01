@@ -148,5 +148,139 @@ class TestPlanRequiredPersisted(TmpSpecCase):
         self.assertTrue(data["plan_required"])
 
 
+
+KAFKA_SPEC = "## Summary\nLog the lead.\n\n## Behavior\n1. **B1** — does not publish to Kafka.\n"
+TRIVIAL_SPEC = "## Summary\nRename a label.\n\n## Behavior\nNo logic change.\n"
+
+
+class TestTierOverride(TmpSpecCase):
+    def _run(self, *extra):
+        return triage.main(["s", "--spec-dir", str(self.tmp), *extra])
+
+    def _path_json(self):
+        return json.loads((self.tmp / "_state" / "s-path.json").read_text())
+
+    def test_force_lower_tier(self):
+        # A negated mention ("does not publish to Kafka") still trips the
+        # async/eventing regex — the case the override exists for.
+        self._write_spec("s", KAFKA_SPEC)
+        self.assertEqual(self._run(), 0)
+        self.assertEqual(self._path_json()["ticket_type"], "high-risk")
+
+        self.assertEqual(self._run("--tier", "focused", "--reason", "negated Kafka mention"), 0)
+        data = self._path_json()
+        self.assertEqual(data["ticket_type"], "focused")
+        self.assertEqual(data["complexity"], "LOW")
+        self.assertEqual(data["path"], triage.PATHS["focused"])
+        self.assertEqual(data["next"], "/sdd:implement")
+        self.assertFalse(data["plan_required"])
+        self.assertEqual(data["override"]["tier"], "focused")
+        self.assertEqual(data["override"]["reason"], "negated Kafka mention")
+        self.assertEqual(data["override"]["auto_tier"], "high-risk")
+
+    def test_force_higher_tier(self):
+        self._write_spec("s", TRIVIAL_SPEC)
+        self.assertEqual(self._run("--tier", "high-risk", "--reason", "touches billing"), 0)
+        data = self._path_json()
+        self.assertEqual(data["ticket_type"], "high-risk")
+        self.assertTrue(data["plan_required"])
+        self.assertIn("/sdd:test-design", data["path"])
+        self.assertEqual(data["override"]["auto_tier"], "trivial")
+
+    def test_reason_is_mandatory(self):
+        self._write_spec("s", KAFKA_SPEC)
+        self.assertEqual(self._run("--tier", "focused"), 2)
+        self.assertEqual(self._run("--tier", "focused", "--reason", "   "), 2)
+        self.assertFalse((self.tmp / "_state" / "s-path.json").exists())
+
+    def test_unknown_tier_rejected(self):
+        self._write_spec("s", KAFKA_SPEC)
+        with self.assertRaises(SystemExit):
+            self._run("--tier", "medium", "--reason", "x")
+
+    def test_override_is_sticky_across_reruns(self):
+        self._write_spec("s", KAFKA_SPEC)
+        self._run("--tier", "standard", "--reason", "no eventing")
+        self._run()  # e.g. spec re-drafted: triage runs again without --tier
+        data = self._path_json()
+        self.assertEqual(data["ticket_type"], "standard")
+        self.assertEqual(data["override"]["reason"], "no eventing")
+
+    def test_tier_auto_drops_override(self):
+        self._write_spec("s", KAFKA_SPEC)
+        self._run("--tier", "focused", "--reason", "x")
+        self.assertEqual(self._run("--tier", "auto"), 0)
+        data = self._path_json()
+        self.assertEqual(data["ticket_type"], "high-risk")
+        self.assertNotIn("override", data)
+
+    def test_no_override_keeps_path_json_shape(self):
+        self._write_spec("s", KAFKA_SPEC)
+        self._run()
+        self.assertNotIn("override", self._path_json())
+
+    def test_summary_shows_override(self):
+        c = triage.apply_override(triage.classify("Kafka listener"), "focused", "why not")
+        out = triage.render_summary(c)
+        self.assertIn("Override: forced focused (auto: high-risk", out)
+        self.assertIn("Why:     override: why not", out)
+        self.assertNotIn("REQUIRED", out)
+
+
+class TestPlanGateRespectsOverride(TmpSpecCase):
+    """The plan-required gate (/sdd:implement Step 3.4) follows the forced tier."""
+
+    def setUp(self):
+        super().setUp()
+        import gates
+        self.gates = gates
+
+    def _required(self):
+        return self.gates.plan_required("s", str(self.tmp))
+
+    def test_forced_lower_tier_lifts_the_gate(self):
+        self._write_spec("s", KAFKA_SPEC)
+        triage.main(["s", "--spec-dir", str(self.tmp)])
+        self.assertTrue(self._required())
+        triage.main(["s", "--spec-dir", str(self.tmp), "--tier", "standard", "--reason", "x"])
+        self.assertFalse(self._required())
+
+    def test_forced_high_risk_engages_the_gate(self):
+        self._write_spec("s", TRIVIAL_SPEC)
+        triage.main(["s", "--spec-dir", str(self.tmp)])
+        self.assertFalse(self._required())
+        triage.main(["s", "--spec-dir", str(self.tmp), "--tier", "high-risk", "--reason", "x"])
+        self.assertTrue(self._required())
+        (self.tmp / "_plan").mkdir()
+        (self.tmp / "_plan" / "s-plan.md").write_text("plan")
+        self.assertFalse(self._required())
+
+    def test_override_block_wins_over_plan_required_field(self):
+        (self.tmp / "_state").mkdir()
+        (self.tmp / "_state" / "s-path.json").write_text(json.dumps(
+            {"id": "s", "plan_required": True, "override": {"tier": "focused", "reason": "x"}}
+        ))
+        self.assertFalse(self._required())
+
+    def test_cli_exit_code_follows_override(self):
+        import subprocess
+        root = self.tmp.parent / (self.tmp.name + "-proj")
+        sw = root / ".specwork"
+        (sw / "_spec").mkdir(parents=True)
+        self.addCleanup(lambda: __import__("shutil").rmtree(root, ignore_errors=True))
+        (sw / "_spec" / "s-spec.md").write_text(KAFKA_SPEC)
+        lib = Path(triage.__file__).resolve().parent
+
+        def check():
+            return subprocess.run(
+                [sys.executable, str(lib / "gates.py"), "check-plan-required", "s"],
+                cwd=root, capture_output=True, text=True,
+            ).returncode
+
+        triage.main(["s", "--spec-dir", str(sw)])
+        self.assertEqual(check(), 1)
+        triage.main(["s", "--spec-dir", str(sw), "--tier", "focused", "--reason", "x"])
+        self.assertEqual(check(), 0)
+
 if __name__ == "__main__":
     unittest.main()

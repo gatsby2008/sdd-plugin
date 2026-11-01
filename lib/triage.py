@@ -4,12 +4,21 @@ Triage classifier for the SDD pipeline. Reads a spec and classifies the ticket
 into one of four advisory complexity tiers, then writes the recommended pipeline
 path to .specwork/_state/<slug>-path.json.
 
-Advisory only — no skill blocks on the result. /sdd:start prints the summary and
-/sdd:state reads path.json (when present) to pick the first pending step.
+Advisory, with one exception: the high-risk tier stamps ``plan_required`` and
+/sdd:implement blocks until a plan exists (gates.py check-plan-required).
+/sdd:spec prints the summary on the first draft; /sdd:state reads path.json
+(when present) to pick the first pending step.
+
+The tier can be forced with --tier (and a mandatory --reason). The forced tier
+drives everything downstream (path, plan_required, the high-risk auditor); the
+automatic result is kept under ``override`` for traceability. An override is
+sticky: re-running triage without --tier re-applies it. ``--tier auto`` drops it.
 
 Standalone:
   python3 triage.py <slug>                 # reads .specwork/_spec/<slug>-spec.md
   python3 triage.py <slug> --spec-dir DIR  # custom .specwork root
+  python3 triage.py <slug> --tier focused --reason "only logs, no publish"
+  python3 triage.py <slug> --tier auto     # drop a previous override
 """
 import argparse
 import json
@@ -115,6 +124,48 @@ def classify(text):
     }
 
 
+def apply_override(classification, tier, reason):
+    """Return a copy of ``classification`` forced to ``tier``.
+
+    Every tier-derived field (path, plan_required, next, complexity) follows the
+    forced tier so downstream gates read one consistent answer. The automatic
+    tier and its reason are preserved under ``override``.
+    """
+    if tier not in PATHS:
+        raise ValueError(f"unknown tier: {tier}")
+    reason = (reason or "").strip()
+    if not reason:
+        raise ValueError("a tier override needs a reason")
+    path = PATHS[tier]
+    return {
+        **classification,
+        "ticket_type": tier,
+        "complexity": COMPLEXITY[tier],
+        "path": path,
+        "plan_required": tier == "high-risk",
+        "next": path[0],
+        "why": f"override: {reason}",
+        "override": {
+            "tier": tier,
+            "reason": reason,
+            "auto_tier": classification["ticket_type"],
+            "auto_why": classification["why"],
+        },
+    }
+
+
+def read_override(path_json):
+    """The ``override`` block of an existing path.json, or None."""
+    try:
+        data = json.loads(Path(path_json).read_text(encoding="utf-8"))
+    except Exception:
+        return None
+    ov = data.get("override") if isinstance(data, dict) else None
+    if isinstance(ov, dict) and ov.get("tier") in PATHS and (ov.get("reason") or "").strip():
+        return ov
+    return None
+
+
 def build_path_json(slug, classification):
     return {"schema_version": 1, "id": slug, **classification}
 
@@ -125,10 +176,17 @@ def render_summary(classification):
         if classification.get("plan_required")
         else ""
     )
+    ov = classification.get("override")
+    override_line = (
+        f"Override: forced {ov['tier']} (auto: {ov['auto_tier']} — {ov['auto_why']})\n"
+        if ov
+        else ""
+    )
     return (
         f"Triage:  {classification['ticket_type']} ({classification['complexity']})\n"
         f"Path:    {' → '.join(classification['path'])}\n"
         f"{plan_line}"
+        f"{override_line}"
         f"Why:     {classification['why']}"
     )
 
@@ -137,7 +195,14 @@ def main(argv=None):
     parser = argparse.ArgumentParser(description="Classify a spec into a pipeline path.")
     parser.add_argument("slug")
     parser.add_argument("--spec-dir", default=".specwork")
+    parser.add_argument("--tier", choices=sorted(PATHS) + ["auto"],
+                        help="force the tier (needs --reason); 'auto' drops an override")
+    parser.add_argument("--reason", default="", help="why the tier is forced")
     args = parser.parse_args(argv)
+
+    if args.tier and args.tier != "auto" and not args.reason.strip():
+        print("--tier needs --reason: say why the automatic tier is wrong.", file=sys.stderr)
+        return 2
 
     spec_path = Path(args.spec_dir) / "_spec" / f"{args.slug}-spec.md"
     if not spec_path.exists():
@@ -150,6 +215,12 @@ def main(argv=None):
     classification = classify(scoped or text)
 
     out = Path(args.spec_dir) / "_state" / f"{args.slug}-path.json"
+    if args.tier and args.tier != "auto":
+        classification = apply_override(classification, args.tier, args.reason)
+    elif not args.tier:
+        previous = read_override(out)
+        if previous:
+            classification = apply_override(classification, previous["tier"], previous["reason"])
     out.parent.mkdir(parents=True, exist_ok=True)
     out.write_text(json.dumps(build_path_json(args.slug, classification), indent=2) + "\n", encoding="utf-8")
 

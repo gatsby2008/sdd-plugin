@@ -145,6 +145,7 @@ up front and the rest of the pipeline flows.
 - Refine resolves Open Questions, expands `## Implementation Context`, appends to `## Safe Constraints`, adjusts `## Expected Change Scope`
 - Mixed input in a single call: files + Jira ticket + free text together
 - Refine with **no arguments** is a strict no-op (no write, no mtime bump)
+- `--tier <trivial|focused|standard|high-risk|auto> "<reason>"` forces the triage tier (reason mandatory) without touching the spec; the plan-required gate and the high-risk auditor follow the forced tier. `auto` drops the override
 - **Warns** when `plan.md` is older than the new spec or when the working tree has uncommitted changes (the actual block comes later, in `/sdd:implement`)
 - Never deletes user content, never touches `source.md` / `rules.json`, never modifies git state
 - Use any time after `/sdd:start` — first to draft, then between planning and implementation, mid-implementation, during review
@@ -166,7 +167,7 @@ up front and the rest of the pipeline flows.
 - Changes accumulate in working tree (no commits between steps)
 - **Strict gates** (abort with no writes):
   - Unresolved `## Open Questions` in spec.md or plan.md
-  - Triage tier `high-risk` and no `plan.md` yet — run `/sdd:plan` first
+  - Triage tier `high-risk` and no `plan.md` yet — run `/sdd:plan` first (or correct a misclassification with `/sdd:spec --tier`)
   - `plan.md` exists and is older than `spec.md` (typically after `/sdd:spec` or a manual spec edit) — re-run `/sdd:plan` to regenerate, or `rm` the plan to fall back to discovery from the spec
 - Ends with a complexity assessment and recommended next phase:
   - Low/isolated → `/sdd:commit`
