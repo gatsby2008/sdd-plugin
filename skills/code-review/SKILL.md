@@ -39,7 +39,15 @@ Keep the report short and evidence-based.
 9. Prepend the test-coverage gaps (if any) to the merged report
 10. Detect pack hints from diff content (see *Pack Hints* below) and append a `## Suggested Follow-ups` section if any trigger fires
 11. Write `.specwork/_review/<id>-code-review.md`
-12. Print the report and ask for approval before any fixes
+12. Print the report and ask for approval before any fixes — **except in auditor mode** (see below)
+
+### Auditor mode (invoked by `/sdd:commit` on high-risk pipelines)
+
+When `/sdd:commit` runs this review automatically (its high-risk auditor step), it is
+**report-only**: run steps 1–11 and print the report, but do not ask about fixes and
+do not apply any. Review the staged diff (what is about to be committed). End by
+returning the `## Verdict` line — `/sdd:commit` stamps it with
+`audit.py record`, so the same staged diff is never reviewed twice.
 
 ---
 

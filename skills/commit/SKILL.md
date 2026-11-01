@@ -18,6 +18,7 @@ allowed-tools: Bash(git status:*), Bash(git diff:*), Bash(git rev-parse:*), Bash
 | 2 | If nothing staged → offers to stage modified/new files from `git status` (see Auto-Stage Offer) |
 | 3 | **Test-coverage gate (STRICT)** — blocks if a changed production class has no matching test (see below) |
 | 3.5 | **Spec-conformance check (advisory)** — pipeline mode only: lists spec Behaviors with no `spec: B<n>`-tagged test; never blocks (see below) |
+| 3.6 | **High-risk auditor (advisory)** — pipeline mode, `high-risk` tier only: runs `/sdd:code-review` once per distinct staged diff; never blocks (see below) |
 | 4 | Proposes a semantic commit message and waits for confirmation — **does not auto-commit** (see Format below) |
 | 5 | Makes the commit on approval |
 | 6 | Gets the short commit hash via `git rev-parse --short HEAD` |
@@ -143,6 +144,41 @@ features' tags can't satisfy this one.
 - Silent when the spec has no Behavior ids (specs drafted before ids existed) or on
   any internal error.
 - Deterministic grep over the diff — no LLM review, no extra tokens.
+
+---
+
+## High-Risk Auditor (advisory)
+
+Run right after the conformance check, **only when `$SLUG` is set** (pipeline mode).
+Reviewer agents cost tokens, so the review runs only where triage judged the risk
+worth it — and only once per distinct staged diff:
+
+```bash
+[ -n "$SLUG" ] && python3 ${CLAUDE_PLUGIN_ROOT}/lib/audit.py required "$SLUG"
+```
+
+- **Exit 0** → skip silently. This is the outcome for every `trivial` / `focused` /
+  `standard` pipeline (zero extra tokens), for a high-risk pipeline whose staged diff
+  was already audited, and on any internal error (fails open).
+- **Exit 1** (`AUDIT_REQUIRED`) → run `/sdd:code-review` in **auditor mode**
+  (report-only, on the staged diff — no fix prompt), then stamp the receipt with the
+  report's verdict:
+
+  ```bash
+  python3 ${CLAUDE_PLUGIN_ROOT}/lib/audit.py record "$SLUG" "<PASS | PASS WITH WARNINGS | FAIL>"
+  ```
+
+The verdict is **advisory in every mode** — it never blocks the commit, and
+`/sdd:auto` continues without pausing. Show it above the commit-message proposal; on
+`FAIL`, lead with it so the developer can decide to fix first:
+
+```text
+⚠ High-risk audit: FAIL — 2 BLOCKING finding(s), see .specwork/_review/<id>-code-review.md
+```
+
+The receipt (`.specwork/_review/<slug>-audit.json`) holds the SHA-256 of
+`git diff --cached <merge-base>`; any change to what is staged invalidates it and the
+next `/sdd:commit` reviews again.
 
 ---
 
