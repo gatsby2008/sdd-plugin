@@ -8,9 +8,8 @@ anywhere (e.g. a doc still pointing at the origin's old per-tool installer
 instead of this plugin's namespaced /sdd:* commands).
 
 Only tracked files are checked because they are what ships in the published
-plugin. Gitignored scratch (e.g. local review notes under docs/reviews/, or a
-machine-local settings.local.json) may legitimately name the origin and is not
-part of the distribution. Outside a git checkout, the test falls back to walking
+plugin. Gitignored scratch (e.g. a machine-local settings.local.json) may
+legitimately name the origin and is not part of the distribution. Outside a git checkout, the test falls back to walking
 the tree.
 
 The forbidden tokens are assembled from fragments on purpose, so this guard file
