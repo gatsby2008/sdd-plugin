@@ -23,6 +23,12 @@ The catalog is written to `service-catalog/<service-name>.md` under
 `~/.claude/` (or `$CLAUDE_DOC_HOME` for a team-shared registry). On completion the
 command prints the stored path. Query the registry with `/sdd:ask`.
 
+**Freshness.** The catalog header records the commit it was generated from
+(`Verified at: <commit>`). `/sdd:doc-catalog list` reports how many commits and code
+files changed since then in this repo; `/sdd:ask` shows the commit next to every
+catalog it loads and warns when one was regenerated more than 90 days ago
+(`SDD_CATALOG_MAX_AGE_DAYS`).
+
 ---
 
 ## What It Produces
