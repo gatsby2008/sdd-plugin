@@ -206,7 +206,7 @@ up front and the rest of the pipeline flows.
 
 ### `/sdd:mr`
 - **Pre-push validation**: runs test suite before push
-  - If tests fail → offers the **Repair Loop** (asks first): fixes the code and re-runs `check.sh`, max 3 attempts. A guard rejects any attempt that edits `check.sh`, changes existing tests, or skips one. Still red, declined, or rejected → stops, does not push
+  - If tests fail → offers the **Repair Loop** (asks first): fixes the code and re-runs `check.sh`, max 3 attempts. `lib/repair.py` counts the attempts and guards each one: no edits to `check.sh` or test configs, no changes to existing tests, no skips. A green repair is committed with `/sdd:commit`. Still red, declined, or rejected → stops, does not push; the push hook stays closed until the loop ends
   - If tests pass → continues
 - Builds concise MR title/description from spec + commits
 - Optional publish: `.specwork/_spec/...` -> `docs/specs/...`

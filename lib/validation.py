@@ -23,6 +23,7 @@ from pathlib import Path
 
 import gates
 import paths
+import repair
 
 
 def head_sha():
@@ -103,6 +104,13 @@ def main(argv):
     cmd = argv[0]
     slug = argv[1] if len(argv) > 1 else None
     if cmd == "record":
+        # An open repair loop (lib/repair.py) must close through `repair.py green`
+        # — which re-runs its metric guard — before HEAD may be stamped. Without a
+        # stamp the push-gate hook blocks the push.
+        if repair.is_open():
+            sys.stderr.write("✗ validation.py: a check.sh repair loop is open — run `repair.py green` "
+                             "after a green check.sh (or `repair.py reset` to drop it). HEAD not stamped.\n")
+            return 1
         sha = record(slug)
         if sha:
             sys.stdout.write("✓ quality gate validated for HEAD {}\n".format(sha[:8]))

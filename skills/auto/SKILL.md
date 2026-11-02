@@ -190,10 +190,11 @@ the MR. **This is where auto mode ends.** Hand control back to the user for
 review, merge, and close.
 
 If `check.sh` fails, `/sdd:mr` runs its Repair Loop **without asking** (non-interactive
-mode): up to 3 attempts to fix the code, each checked by `lib/repair.py guard` so a
-repair can never edit `check.sh`, change existing tests, or skip one. If it is still
-red after the third attempt, or the guard rejects an attempt, stop without pushing and
-surface the failure — never push on red.
+mode): up to 3 attempts to fix the code. `lib/repair.py` counts the attempts and
+guards each one, so a repair can never edit `check.sh` or a test config, change
+existing tests, or skip one. A green repair is committed with `/sdd:commit`, which
+continues to `/sdd:mr`. If it is still red after the third attempt, or the guard
+rejects an attempt, stop without pushing and surface the failure — never push on red.
 
 Print a short closing summary (branch, slug, MR link or manual URL) and stop.
 Do **not** run `/sdd:close` or `/sdd:mr-address`.

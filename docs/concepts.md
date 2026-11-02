@@ -94,12 +94,23 @@ blocked, while the `/sdd:mr` flow passes silently.
 When `check.sh` fails, `/sdd:mr` offers a **Repair Loop** — it asks first, and
 `/sdd:auto` runs it without asking: fix the code, re-run `check.sh`, at most **3
 attempts**, and never push on red. A loop is only as good as a metric it cannot
-edit, so after each attempt `lib/repair.py guard <base>` compares the tree with
-the commit the loop started from and rejects any change to `check.sh`, any removed
-or modified line in an existing test file, a deleted test file, and any added
-skip/disable marker (`@Disabled`, `@pytest.mark.skip`, `it.skip(` …). New tests
-and new assertions are allowed. A rejection stops the loop on the spot. The
-guard keeps no state — the base is just the `HEAD` sha at the first failure.
+edit. `lib/repair.py` keeps the loop's state in the git dir, one file per
+branch (`.git/sdd-repair-<branch>-<hash>.json`: base sha + attempts, never
+committed), counts each attempt whose content changed, and runs a guard that compares the tree with the base. The guard
+rejects any change to the project's `commands/check.sh` or to a test-runner
+config (`pytest.ini`, `conftest.py`, `jest.config.*` …), an added line that
+excludes tests in a build file (`pyproject.toml`, `package.json`, `pom.xml` …),
+any removed or modified line in an existing test file, a deleted or renamed test
+file, and any added skip/disable/focus marker (`@Disabled`, `skipif`,
+`assumeTrue(`, `it.only(` …). New tests and new assertions are allowed. Files that were already untracked when the loop opened are left out.
+
+The enforcement point is the validation stamp: `validation.py record` refuses to
+stamp HEAD while a loop is open, and only `repair.py green` — which re-runs the
+guard — closes it. So the push-gate hook blocks every push, a raw `git push`
+included, until the loop ends green and clean. It raises the bar rather than
+being tamper-proof: a human can drop the loop with `repair.py reset`. The guard
+cannot see production code that special-cases the failing test's inputs; the
+skill forbids it, but that part rests on the agent.
 
 ### Awareness hooks (non-blocking)
 

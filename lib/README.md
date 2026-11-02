@@ -55,13 +55,17 @@ Replace inline Python heredocs (`python3 - <<'PY'`) across all SDD skills with t
 
 ## repair.py
 
-Metric guard for `/sdd:mr`'s Repair Loop. After each repair attempt it compares the
-working tree with the commit the loop started from and rejects any change to
-`commands/check.sh`, removed or modified lines in existing test files, deleted test
-files, and added skip/disable markers. Stateless.
+State, attempt cap and metric guard for `/sdd:mr`'s Repair Loop. State lives in
+`.git/sdd-repair-<branch>-<hash>.json` (one loop per branch, never committed); `validation.py record`
+refuses to stamp HEAD while a loop is open, so the push hook blocks until it closes.
+The guard rejects changes to `commands/check.sh` and test-runner configs, test
+exclusions added to build files, removed/modified lines in existing tests, deleted
+tests, and skip/disable/focus markers.
 
 ```bash
-REPAIR_BASE="$(git rev-parse HEAD)"   # at the first check.sh failure
-python3 ${CLAUDE_PLUGIN_ROOT}/lib/repair.py guard "$REPAIR_BASE"   # 0 clean · 1 violations · 2 bad ref
+python3 ${CLAUDE_PLUGIN_ROOT}/lib/repair.py red     # check.sh failed: open the loop / count it (rc 3 = exhausted)
+python3 ${CLAUDE_PLUGIN_ROOT}/lib/repair.py pre     # before check.sh: guard + count → NONE | RUN_CHECK | SKIP_CHECK
+python3 ${CLAUDE_PLUGIN_ROOT}/lib/repair.py green   # check.sh passed: 0 closed · 4 commit first · 1 violation
+python3 ${CLAUDE_PLUGIN_ROOT}/lib/repair.py reset   # a human drops the loop
+python3 ${CLAUDE_PLUGIN_ROOT}/lib/repair.py guard <base>   # guard only: 0 clean · 1 violations · 2 bad ref
 ```
-
