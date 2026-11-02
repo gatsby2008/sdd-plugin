@@ -69,3 +69,20 @@ python3 ${CLAUDE_PLUGIN_ROOT}/lib/repair.py green   # check.sh passed: 0 closed 
 python3 ${CLAUDE_PLUGIN_ROOT}/lib/repair.py reset   # a human drops the loop
 python3 ${CLAUDE_PLUGIN_ROOT}/lib/repair.py guard <base>   # guard only: 0 clean · 1 violations · 2 bad ref
 ```
+
+## registry.py
+
+Selective retrieval over the doc registries — the engine behind `/sdd:ask`. Reads the
+four `raw/` registries under `$CLAUDE_DOC_HOME` (default `~/.claude`) and prints an
+INDEX of every in-scope doc, the best-matching docs (IDF-weighted terms; large docs
+trimmed to their matching `##` sections) up to a budget, the other matches by path,
+reading hints, and — when a `wiki/` sibling exists — whether it lags `raw/`.
+
+```bash
+python3 ${CLAUDE_PLUGIN_ROOT}/lib/registry.py ask "who consumes LeadCreated?"
+python3 ${CLAUDE_PLUGIN_ROOT}/lib/registry.py ask "type:spec which specs have open questions?"
+python3 ${CLAUDE_PLUGIN_ROOT}/lib/registry.py ask --budget 30000 "service:leads-service retries"
+```
+
+`type:` / `service:` are optional filters; a service named in the question only boosts
+its docs. Budget: `--budget N` or `SDD_ASK_BUDGET` (characters, default 60 000).
