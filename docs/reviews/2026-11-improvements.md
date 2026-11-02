@@ -292,3 +292,11 @@ flujo de `implement` recién adelgazado.
 
 ### Esfuerzo
 A: **M** · B: **M** (un agente nuevo + cambios en `/sdd:commit` y `lib/audit.py` para el recibo de dos etapas + tests) · C: **S** sobre B.
+
+**Estado (2026-11-02).** B hecho. Agente `sdd:spec:conformance-reviewer`
+(solo lectura, descripción de una línea sin `<example>`); `audit.py spec-review`
+decide si corre la etapa 1 (solo con ids de Behavior) y `audit.py record … --spec <v>`
+guarda las dos etapas en el recibo (`stages`; `DEVIATES` exige `FAIL` y marca la
+calidad como `SKIPPED`). Recibos viejos sin `stages` siguen valiendo. El revisor
+también señala tests etiquetados `spec: <slug>#B<n>` cuyo Behavior el diff no
+implementa. C (opt-in para otros tiers) sigue pendiente.

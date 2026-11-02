@@ -65,7 +65,7 @@ rather than guessing; the two marked *(advisory)* only report and never block.
 | **Plan staleness** | `/sdd:implement` | If `plan.md` exists and is older than `spec.md` (`spec.md` mtime > `plan.md` mtime — typically after `/sdd:spec` or a manual spec edit), the step blocks. Re-run `/sdd:plan`, or `rm` the plan to fall back to inline discovery |
 | **Test coverage** | `/sdd:commit` + `PreToolUse` hook | A changed production class (Java `src/main/*.java`, frontend `*.tsx/.ts`) with no matching test (`*Test`/`*IT`, `*.test`/`*.spec`) blocks the commit. DTOs, config, entities, and barrels are excluded. The only escape is a per-class waiver-with-reason in `.specwork/_test/<slug>-coverage-waivers.json` (pipeline) or `.sdd-coverage-waivers.json` (standalone) |
 | **Spec conformance** *(advisory)* | `/sdd:commit` | Lists spec Behaviors (`**B1**`, `**B2**`, … in `## Behavior`) that no test tags with `spec: <slug>#B<n>` (or a bare `spec: B<n>`) in lines added on the branch. A tag naming another slug doesn't count. Never blocks; silent for specs without ids. Deterministic grep (`lib/conformance.py`) — no LLM review |
-| **High-risk auditor** *(advisory)* | `/sdd:commit` | Only for pipelines triaged `high-risk`: runs `/sdd:code-review` (report-only) once per distinct staged diff and stamps a receipt (`_review/<slug>-audit.json`: diff fingerprint + verdict). Never blocks; other tiers pay no extra tokens |
+| **High-risk auditor** *(advisory)* | `/sdd:commit` | Only for pipelines triaged `high-risk`, once per distinct staged diff, in two stages. Stage 1: the `sdd:spec:conformance-reviewer` agent reads the spec against the diff and marks each Behavior met / not met / unverifiable (`_review/<slug>-spec-review.md`) — what the tag grep above cannot see. Stage 2: `/sdd:code-review` (report-only), skipped when stage 1 finds a deviation. One receipt (`_review/<slug>-audit.json`: diff fingerprint + verdict + per-stage results). Never blocks; other tiers pay no extra tokens |
 | **Quality (`check.sh`)** | `/sdd:mr` + `PreToolUse` hook | `commands/check.sh` (the project's full validation suite) must pass before a `git push`. `/sdd:mr` runs it, then stamps the validated HEAD; the hook blocks any push whose HEAD wasn't stamped. No-ops when the repo has no `commands/check.sh`. On red, `/sdd:mr` offers a guarded Repair Loop (below) |
 
 `/sdd:spec` also **warns** (does not block) when `plan.md` is stale or the tree has
@@ -204,7 +204,8 @@ lossy.
 - `_progress/<slug>-context.md` — optional human-authored execution context
 - `_progress/escalations.md` — append-only log of `/sdd:implement` escalations (auto-written when retries are exhausted; consumed by `/sdd:handoff` as *Known Blockers*)
 - `_review/<slug>-code-review.md` — code review output (optional)
-- `_review/<slug>-audit.json` — high-risk auditor receipt (diff fingerprint + verdict) from `/sdd:commit`
+- `_review/<slug>-audit.json` — high-risk auditor receipt (diff fingerprint + verdict + `stages`) from `/sdd:commit`
+- `_review/<slug>-spec-review.md` — high-risk auditor stage 1: Behavior-by-Behavior conformance of the diff to the spec
 - `_review/<slug>-mr-address.md` — review comment resolution
 - `_handoff/<slug>-execution-pack.md` / `.json` — handoff contract + metadata (optional)
 

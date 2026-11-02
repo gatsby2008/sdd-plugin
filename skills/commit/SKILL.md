@@ -18,7 +18,7 @@ allowed-tools: Bash(git status:*), Bash(git diff:*), Bash(git rev-parse:*), Bash
 | 2 | If nothing staged → offers to stage modified/new files from `git status` (see Auto-Stage Offer) |
 | 3 | **Test-coverage gate (STRICT)** — blocks if a changed production class has no matching test (see below) |
 | 3.5 | **Spec-conformance check (advisory)** — pipeline mode only: lists spec Behaviors with no `spec: <slug>#B<n>`-tagged test; never blocks (see below) |
-| 3.6 | **High-risk auditor (advisory)** — pipeline mode, `high-risk` tier only: runs `/sdd:code-review` once per distinct staged diff; never blocks (see below) |
+| 3.6 | **High-risk auditor (advisory)** — pipeline mode, `high-risk` tier only, once per distinct staged diff: stage 1 checks the diff against the spec's Behaviors, stage 2 runs `/sdd:code-review` (skipped when stage 1 finds a deviation); never blocks (see below) |
 | 4 | Proposes a semantic commit message and waits for confirmation — **does not auto-commit** (see Format below) |
 | 5 | Makes the commit on approval |
 | 6 | Gets the short commit hash via `git rev-parse --short HEAD` |
@@ -161,25 +161,49 @@ worth it — and only once per distinct staged diff:
 - **Exit 0** → skip silently. This is the outcome for every `trivial` / `focused` /
   `standard` pipeline (zero extra tokens), for a high-risk pipeline whose staged diff
   was already audited, and on any internal error (fails open).
-- **Exit 1** (`AUDIT_REQUIRED`) → run `/sdd:code-review` in **auditor mode**
-  (report-only, on the staged diff — no fix prompt), then stamp the receipt with the
-  report's verdict:
+- **Exit 1** (`AUDIT_REQUIRED`) → run the two stages below, then stamp one receipt.
 
-  ```bash
-  python3 ${CLAUDE_PLUGIN_ROOT}/lib/audit.py record "$SLUG" "<PASS | PASS WITH WARNINGS | FAIL>"
-  ```
+**Stage 1 — spec conformance.** Does the diff do what the spec says?
+
+```bash
+python3 ${CLAUDE_PLUGIN_ROOT}/lib/audit.py spec-review "$SLUG"
+# → {"spec": ".specwork/_spec/<slug>-spec.md", "ref": "<sha>", "ids": ["B1", "B2", …]}
+```
+
+- `ids` empty (no spec, or a spec without Behavior ids) → spec verdict `SKIPPED`; go to stage 2.
+- Otherwise launch the `sdd:spec:conformance-reviewer` agent (Task tool) with `slug`,
+  `spec`, `ref` and `ids`. Write its report verbatim to
+  `.specwork/_review/<slug>-spec-review.md` and take the spec verdict from its
+  `## Spec Verdict:` line (`CONFORMS | UNVERIFIED | DEVIATES`). If the agent is
+  missing or fails, use `SKIPPED` and say so in one line.
+
+**Stage 2 — quality and security.** Skip it when stage 1 returned `DEVIATES`:
+reviewing a diff that does not do what the spec says wastes the review. Otherwise run
+`/sdd:code-review` in **auditor mode** (report-only, on the staged diff — no fix prompt)
+and take its verdict.
+
+**Receipt.** One call, both stages:
+
+```bash
+python3 ${CLAUDE_PLUGIN_ROOT}/lib/audit.py record "$SLUG" "<PASS | PASS WITH WARNINGS | FAIL>" --spec <CONFORMS | UNVERIFIED | DEVIATES | SKIPPED>
+```
+
+On `DEVIATES` the verdict is `FAIL` (stage 2 did not run; `audit.py` rejects anything else).
 
 The verdict is **advisory in every mode** — it never blocks the commit, and
 `/sdd:auto` continues without pausing. Show it above the commit-message proposal; on
 `FAIL`, lead with it so the developer can decide to fix first:
 
 ```text
-⚠ High-risk audit: FAIL — 2 BLOCKING finding(s), see .specwork/_review/<id>-code-review.md
+⚠ High-risk audit: FAIL — spec: DEVIATES (B2 not met), code review skipped — see .specwork/_review/<slug>-spec-review.md
+⚠ High-risk audit: FAIL — spec: CONFORMS, 2 BLOCKING finding(s) — see .specwork/_review/<id>-code-review.md
+✓ High-risk audit: PASS — spec: UNVERIFIED (B3), see .specwork/_review/<slug>-spec-review.md
 ```
 
 The receipt (`.specwork/_review/<slug>-audit.json`) holds the SHA-256 of
-`git diff --cached <merge-base>`; any change to what is staged invalidates it and the
-next `/sdd:commit` reviews again.
+`git diff --cached <merge-base>`, the verdict and a `stages` block
+(`{"spec": …, "quality": "RUN" | "SKIPPED"}`); any change to what is staged
+invalidates it and the next `/sdd:commit` audits again — both stages.
 
 ---
 

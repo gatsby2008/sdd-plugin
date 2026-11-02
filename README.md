@@ -64,6 +64,7 @@ sdd-plugin/
 │   └── api-contract-review, concurrency-review, jpa-patterns, logging-patterns
 ├── agents/
 │   ├── java/  → sdd:java:quality-reviewer, sdd:java:security-reviewer
+│   ├── spec/  → sdd:spec:conformance-reviewer (high-risk auditor, stage 1)
 │   └── ui/    → sdd:ui:quality-reviewer, sdd:ui:a11y-reviewer
 ├── hooks/                python3 check + pipeline status (SessionStart),
 │                        coverage/push gates + branch-mismatch warning (PreToolUse),

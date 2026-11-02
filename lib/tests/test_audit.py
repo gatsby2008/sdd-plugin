@@ -5,7 +5,7 @@ import subprocess
 import sys
 import tempfile
 import unittest
-from contextlib import redirect_stderr
+from contextlib import redirect_stderr, redirect_stdout
 from io import StringIO
 
 LIB_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -105,6 +105,68 @@ class TestAudit(unittest.TestCase):
         self._stage("x = 9\n")  # diff changed → review again
         self.assertTrue(audit.audit_required("x"))
         self.assertEqual(audit._main(["required", "x"]), 1)
+
+    # --- two-stage audit (spec conformance, then code review) ---
+
+    def _spec(self, text):
+        os.makedirs(os.path.join(self.tmp, ".specwork", "_spec"), exist_ok=True)
+        self._write(".specwork/_spec/x-spec.md", text)
+
+    def test_spec_review_input_lists_ids_and_ref(self):  # spec: B7
+        self._spec("## Behavior\n\n1. **B1** — a\n2. **B2** — b\n")
+        data = audit.spec_review_input("x")
+        self.assertEqual(data["ids"], ["B1", "B2"])
+        self.assertEqual(data["spec"], ".specwork/_spec/x-spec.md")
+        merge_base = subprocess.check_output(["git", "merge-base", "main", "HEAD"]).decode().strip()
+        self.assertEqual(data["ref"], merge_base)
+
+    def test_spec_review_skipped_without_ids_or_spec(self):  # spec: B7
+        self.assertEqual(audit.spec_review_input("x")["ids"], [])
+        self._spec("## Behavior\n\n1. legacy\n")
+        self.assertEqual(audit.spec_review_input("x"), {"spec": ".specwork/_spec/x-spec.md",
+                                                       "ref": "", "ids": []})
+        out = StringIO()
+        with redirect_stdout(out):
+            self.assertEqual(audit._main(["spec-review", "x"]), 0)
+        self.assertEqual(json.loads(out.getvalue())["ids"], [])
+
+    def test_record_with_spec_stage(self):  # spec: B8
+        self._stage("x = 2\n")
+        audit.record("x", "pass", spec_verdict="conforms")
+        with open(audit.receipt_file("x")) as f:
+            data = json.load(f)
+        self.assertEqual(data["stages"], {"spec": "CONFORMS", "quality": "RUN"})
+
+    def test_deviation_skips_quality_and_requires_fail(self):  # spec: B8
+        self._stage("x = 2\n")
+        with self.assertRaises(ValueError):
+            audit.record("x", "PASS", spec_verdict="DEVIATES")
+        self.assertFalse(os.path.exists(audit.receipt_file("x")))
+        with redirect_stdout(StringIO()):
+            self.assertEqual(audit._main(["record", "x", "FAIL", "--spec", "DEVIATES"]), 0)
+        with open(audit.receipt_file("x")) as f:
+            self.assertEqual(json.load(f)["stages"], {"spec": "DEVIATES", "quality": "SKIPPED"})
+
+    def test_cli_record_parses_multiword_verdict_with_spec_flag(self):  # spec: B8
+        self._stage("x = 2\n")
+        with redirect_stdout(StringIO()):
+            self.assertEqual(audit._main(
+                ["record", "x", "PASS", "WITH", "WARNINGS", "--spec", "UNVERIFIED"]), 0)
+        with open(audit.receipt_file("x")) as f:
+            data = json.load(f)
+        self.assertEqual((data["verdict"], data["stages"]["spec"]), ("PASS WITH WARNINGS", "UNVERIFIED"))
+
+    def test_bad_spec_verdict_rejected(self):  # spec: B8
+        with redirect_stderr(StringIO()):
+            self.assertEqual(audit._main(["record", "x", "PASS", "--spec", "MAYBE"]), 2)
+            self.assertEqual(audit._main(["record", "x", "PASS", "--spec"]), 2)
+        self.assertFalse(os.path.exists(audit.receipt_file("x")))
+
+    def test_receipt_without_spec_stage_is_unchanged(self):  # spec: B3
+        self._stage("x = 2\n")
+        audit.record("x", "PASS")
+        with open(audit.receipt_file("x")) as f:
+            self.assertNotIn("stages", json.load(f))
 
 
 if __name__ == "__main__":
