@@ -73,6 +73,22 @@ assert_out "SKIP_CHECK" "re-run after commit skips the re-check" -- python3 "$SD
 assert_rc 0 "green closes the loop" -- python3 "$SDD/lib/repair.py" green
 assert_rc 0 "validation stamp allowed once closed" -- python3 "$SDD/lib/validation.py" record demo
 
+echo "== /sdd:ask engine (lib/registry.py) =="
+VAULT="$SCRATCH_ROOT/vault"; RAW="$VAULT/raw"
+mkdir -p "$RAW/spec-registry/lead-service" "$RAW/adr-registry/lead-service" "$RAW/service-catalog"
+printf '# demo\n## Behavior\nSkip dedupe.\n## Open Questions\n- [ ] **#1** Who owns the TTL?\n' > "$RAW/spec-registry/lead-service/dedupe-spec.md"
+printf -- '---\ntitle: SNS fan-out\n---\n## Decision\nPublish LeadCreated via SNS.\n' > "$RAW/adr-registry/lead-service/P-1-ADR-001-sns.md"
+printf '# Service: marketing-service\n## Consumes (SQS)\n- LeadCreated\n' > "$RAW/service-catalog/marketing-service.md"
+export CLAUDE_DOC_HOME="$RAW"
+assert_out "FILE: service-catalog/marketing-service.md" "ask loads the matching catalog" -- python3 "$SDD/lib/registry.py" ask "who consumes LeadCreated and why SNS?"
+assert_out "FILE: adr-registry/lead-service/P-1-ADR-001-sns.md" "ask crosses registries (ADR too)" -- python3 "$SDD/lib/registry.py" ask "who consumes LeadCreated and why SNS?"
+assert_out "Who owns the TTL?" "ask open-questions filter" -- python3 "$SDD/lib/registry.py" ask "type:spec which specs have open questions?"
+assert_out "Usage: /sdd:ask" "ask prints usage without a question" -- python3 "$SDD/lib/registry.py" ask
+mkdir -p "$VAULT/wiki"; printf '## [2000-01-01] ingest | seed\n' > "$VAULT/wiki/log.md"
+assert_out "The wiki is behind" "ask warns when raw/ changed after the last ingest" -- python3 "$SDD/lib/registry.py" ask "LeadCreated"
+CLAUDE_DOC_HOME="$SCRATCH_ROOT/empty-reg" assert_out "No documents found" "ask graceful on empty registry" -- python3 "$SDD/lib/registry.py" ask "x"
+unset CLAUDE_DOC_HOME
+
 echo "------------------------------------------------------------------"
 printf " RESULT: %d passed, %d failed\n" "$PASS" "$FAIL"
 [ "$FAIL" -eq 0 ]

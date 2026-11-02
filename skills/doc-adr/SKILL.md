@@ -52,7 +52,7 @@ REGISTRY="${CLAUDE_DOC_HOME:-$HOME/.claude}/adr-registry"
   repo for team-shared ADRs. ADRs are written under
   `$CLAUDE_DOC_HOME/adr-registry/<service>/`.
 
-The same variable controls `/sdd:doc-adr-query`, `/sdd:doc-catalog`, `/sdd:doc-spec`,
+The same variable controls `/sdd:ask`, `/sdd:doc-catalog`, `/sdd:doc-spec`,
 and `/sdd:doc-investigation`, so all doc registries move together.
 
 ---
@@ -61,7 +61,7 @@ and `/sdd:doc-investigation`, so all doc registries move together.
 
 Run when the argument is `list`. This is **scoped to the current repo's service** — it
 prints only that service's ADRs and exits before any create logic runs. (To ask
-questions across every service, use `/sdd:doc-adr-query`.)
+questions across every service, use `/sdd:ask`.)
 
 1. Detect the service the same way create does (see Service Name): `spring.application.name`
    → git repo basename, lowercased.
@@ -307,7 +307,7 @@ Stored: ~/.claude/adr-registry/<service>/PROJ-17097-ADR-003-use-postgresql-circu
   PROJ-17097-ADR-001-use-postgresql-circuit-breaker.md
   PROJ-17097-ADR-003-use-postgresql-circuit-breaker.md
 
-Run /sdd:doc-adr-query to ask questions across the registry.
+Run /sdd:ask to ask questions across the registry.
 ```
 
 The user can interrupt to edit if something in the ADR is wrong.
@@ -359,5 +359,5 @@ after merging. It writes only to the registry, never to the service repo's worki
 
 ## Related Skills
 
-- `doc-adr-query` — reads every ADR in `~/.claude/adr-registry/` and answers cross-service decision questions
+- `ask` — one query across every registry (adr included); `doc-adr-query` is its deprecated alias
 - `doc-catalog` — same create-and-store pattern for the service catalog

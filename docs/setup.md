@@ -136,7 +136,7 @@ export CLAUDE_DOC_HOME="$HOME/path/to/shared-docs-registry"
 
 When unset, it defaults to `~/.claude` (local-only). Point it at a synced or
 shared directory so `/sdd:doc-catalog` and `/sdd:doc-adr` make catalog and decision
-records discoverable across the team via `/sdd:doc-catalog-query` and `/sdd:doc-adr-query`. The
+records discoverable across the team via `/sdd:ask`. The
 commands create `service-catalog/` and `adr-registry/` subdirectories under it.
 
 ### 5) Project validation script (`commands/check.sh`)

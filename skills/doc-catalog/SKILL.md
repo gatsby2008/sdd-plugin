@@ -52,7 +52,7 @@ REGISTRY="${CLAUDE_DOC_HOME:-$HOME/.claude}/service-catalog"
   repo for team-shared catalogs. The catalog is written under
   `$CLAUDE_DOC_HOME/service-catalog/`.
 
-The same variable controls `/sdd:doc-catalog-query`, `/sdd:doc-adr`, `/sdd:doc-spec`,
+The same variable controls `/sdd:ask`, `/sdd:doc-adr`, `/sdd:doc-spec`,
 and `/sdd:doc-investigation`, so all doc registries move together.
 
 ---
@@ -537,7 +537,7 @@ Registry now contains:
   leads-service.md
   marketing-service.md
 
-Run /sdd:doc-catalog-query to ask cross-service questions.
+Run /sdd:ask to ask cross-service questions.
 ```
 
 Always print the full file list — never abbreviate to a count and never elide entries
@@ -557,5 +557,5 @@ the service repo's working tree.
 
 ## Related Skills
 
-- `doc-catalog-query` — reads every catalog in the registry and answers cross-service questions
+- `ask` — one query across every registry (catalog included); `doc-catalog-query` is its deprecated alias
 - `doc-adr` — capture architectural decisions made while building or evolving the service

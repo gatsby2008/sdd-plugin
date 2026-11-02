@@ -35,7 +35,7 @@ preserving the full history of why the system is the way it is.
 ```
 
 (Or under `$CLAUDE_DOC_HOME/adr-registry/` for a team-shared registry.) Query it with
-`/sdd:doc-adr-query`.
+`/sdd:ask`.
 
 File name format: `<TICKET>-ADR-NNN-<slug>.md` (ticket first, then 3-digit ADR number, then slug). Use `NOTICKET` as the prefix if no ticket exists. The ADR counter is service-wide — it doesn't reset per ticket.
 
@@ -72,7 +72,7 @@ for a single use case...
 Confluence gets stale. Jira tickets get closed. ADRs are the durable record of *why*.
 
 Keeping them in one central registry — rather than scattered across every repo's
-`docs/adr/` — means `/sdd:doc-adr-query` can answer "why PostgreSQL and not Redis?"
+`docs/adr/` — means `/sdd:ask` can answer "why PostgreSQL and not Redis?"
 across every service at once, without cloning each repo.
 
 ---

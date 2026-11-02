@@ -21,7 +21,7 @@ Generated from the code, not written by hand. Accurate by default.
 
 The catalog is written to `service-catalog/<service-name>.md` under
 `~/.claude/` (or `$CLAUDE_DOC_HOME` for a team-shared registry). On completion the
-command prints the stored path. Query the registry with `/sdd:doc-catalog-query`.
+command prints the stored path. Query the registry with `/sdd:ask`.
 
 ---
 
@@ -74,7 +74,7 @@ SNS event is critical for debugging and impact analysis. Without a catalog, the
 answer requires searching across every repo.
 
 With every service's catalog in one central registry, you can:
-- Answer "who consumes `CreditCheckRequested`?" with `/sdd:doc-catalog-query`
+- Answer "who consumes `CreditCheckRequested`?" with `/sdd:ask`
 - See the full dependency chain of a service at a glance
 - Onboard new developers without a live walkthrough
 

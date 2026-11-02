@@ -16,14 +16,14 @@ In the SDD pipeline, `/sdd:mr` already publishes the feature spec to the registr
 (it calls `spec-publish.sh` when a `.specwork/_spec/<slug>-spec.md` exists). This
 skill is the **standalone / vibe-coding** counterpart: when you wrote a spec by
 hand (or outside the pipeline) and never ran `/sdd:mr`, `/sdd:doc-spec` pushes that
-file into the same registry so `/sdd:doc-spec-query` can read it.
+file into the same registry so `/sdd:ask` can read it.
 
 Authoring a spec is still the SDD pipeline command `/sdd:spec`. `doc-spec` is only the
 **registry side** of the spec lifecycle: it takes an existing `spec.md` and stores it,
-the counterpart to `/sdd:doc-spec-query` reading it back.
+the counterpart to `/sdd:ask` reading it back.
 
 It is a **store-only** wrapper — it does not generate a spec from your diff. The
-file you point at is copied verbatim. For best `/sdd:doc-spec-query` results the spec
+file you point at is copied verbatim. For best `/sdd:ask` results the spec
 should follow the canonical SDD sections (`## Summary`, `## Behavior`, `## Scope`,
 `## Implementation Context`, `## Safe Constraints`, `## Open Questions`), but this
 skill never rewrites or enforces them.
@@ -45,7 +45,7 @@ Reject any other argument with a usage message.
 ## Registry Path
 
 All registry I/O resolves through a single environment variable, exactly like
-`/sdd:doc-catalog`, `/sdd:doc-adr`, and `/sdd:doc-spec-query`:
+`/sdd:doc-catalog`, `/sdd:doc-adr`, and `/sdd:ask`:
 
 ```bash
 REGISTRY="${CLAUDE_DOC_HOME:-$HOME/.claude}/spec-registry"
@@ -67,7 +67,7 @@ key lines up with `adr-registry/<service>/`.
 
 Run when the argument is `list`. This is **scoped to the current repo's service** — it
 prints only that service's specs and exits before any store logic runs. (To ask
-questions across every service, use `/sdd:doc-spec-query`.)
+questions across every service, use `/sdd:ask`.)
 
 1. Detect the service the same way Store Mode does (see Step 2): `spring.application.name`
    → `docs/service-info.md` heading → git repo basename, lowercased.
@@ -101,7 +101,7 @@ After listing, exit. Do not proceed to the store steps below.
 | 2 | Detect the service name (same order as `/sdd:doc-catalog`) |
 | 3 | Normalize the destination filename to end in `-spec.md` |
 | 4 | Copy into `spec-registry/<service>/` |
-| 5 | Confirm, and remind about canonical structure for `/sdd:doc-spec-query` |
+| 5 | Confirm, and remind about canonical structure for `/sdd:ask` |
 
 ### Step 1 — Resolve the spec file
 
@@ -148,7 +148,7 @@ Lowercase the result to kebab-case. If nothing resolves, use `unknown`.
 
 ### Step 3 — Normalize the destination filename
 
-`/sdd:doc-spec-query` only discovers files matching `*-spec.md`, so the destination name
+`/sdd:ask` only reads `*-spec.md` files in `spec-registry/`, so the destination name
 **must** end in `-spec.md`:
 
 - If the source basename already matches `*-spec.md`, keep it.
@@ -192,11 +192,11 @@ Published: <spec-file> → ~/.claude/spec-registry/<service>/<DEST_NAME>
   <slug-a>-spec.md
   <slug-b>-spec.md
 
-Run /sdd:doc-spec-query to ask feature/spec questions across services.
+Run /sdd:ask to ask feature/spec questions across services.
 ```
 
 If the published spec is missing canonical sections, add a one-line note (do not
-fail): "Tip: `/sdd:doc-spec-query` reads `## Summary`, `## Behavior`, `## Scope`,
+fail): "Tip: `/sdd:ask` reads `## Summary`, `## Behavior`, `## Scope`,
 `## Safe Constraints`, and `## Open Questions` — add them for richer answers."
 
 ---
@@ -205,14 +205,14 @@ fail): "Tip: `/sdd:doc-spec-query` reads `## Summary`, `## Behavior`, `## Scope`
 
 - Store-only — never generate or rewrite the spec; copy it verbatim.
 - Never commit anything to the project repo (it is a `cp` into the registry).
-- Destination filename must end in `-spec.md` or `/sdd:doc-spec-query` will not find it.
+- Destination filename must end in `-spec.md` or `/sdd:ask` will not find it.
 - The `<service>` key must match `/sdd:doc-catalog` / `/sdd:doc-adr` so all registries align.
 
 ---
 
 ## Related Skills
 
-- `doc-spec-query` — reads every spec in the registry and answers cross-service questions
+- `ask` — one query across every registry (spec included); `doc-spec-query` is its deprecated alias
 - `mr` (sdd bundle) — publishes the pipeline spec automatically after creating the MR
 - `spec` (sdd bundle) — authors the `spec.md` this registry stores
 - `doc-catalog` / `doc-adr` — same create-and-store pattern for catalogs and ADRs

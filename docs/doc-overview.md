@@ -1,20 +1,17 @@
 # Documentation Skills
 
-A bundle of ten skills that together form a documentation and cross-service architecture-discovery workflow. Four parallel families — for **service catalogs**, **ADRs**, **feature specs**, and **investigations** — share one shape: two commands per artifact, `doc-<artifact>` to **create + store** in the central registry and `doc-<artifact>-query` to **read it back**. There is no separate `publish` step — creating an artifact stores it — and nothing is written into the service repo's working tree. Two more skills — **`/sdd:ask`** and **`/sdd:doc-ingest`** — add a unified query and an optional second knowledge layer (see *Two-layer vault* below).
+A bundle of ten skills that together form a documentation and cross-service architecture-discovery workflow. Four parallel families — for **service catalogs**, **ADRs**, **feature specs**, and **investigations** — share one shape: `doc-<artifact>` **creates + stores** it in the central registry, and **`/sdd:ask`** reads all four back with one query (`type:<artifact>` to restrict it). The old `doc-<artifact>-query` commands remain as deprecated aliases. There is no separate `publish` step — creating an artifact stores it — and nothing is written into the service repo's working tree. **`/sdd:doc-ingest`** adds an optional second knowledge layer (see *Two-layer vault* below).
 
 ## Members
 
 | Slash command | Purpose |
 |---------------|---------|
 | `/sdd:doc-catalog` | Generate a service catalog for the current microservice (Java Spring Boot or frontend) — scans controllers, listeners, clients, schedulers, and config — and store it at `~/.claude/service-catalog/<service>.md`. `list` shows the registry. |
-| `/sdd:doc-catalog-query` | Answer cross-service architecture questions by reading the catalog registry. Run from any project. |
 | `/sdd:doc-adr` | Capture an architectural decision as an ADR and store it at `~/.claude/adr-registry/<service>/`. Modes: free text, from a Jira ticket, or from resolved Open Questions on the current branch. `list` shows the registry. |
-| `/sdd:doc-adr-query` | Answer cross-service decision-history questions by reading the ADR registry. Run from any project. |
 | `/sdd:doc-spec` | Store a hand-written or standalone `spec.md` at `~/.claude/spec-registry/<service>/`. Authoring is `/sdd:spec`; the SDD pipeline's `/sdd:mr` stores specs automatically — this is the registry side for vibe-coding / non-pipeline flows. `list` shows the registry. |
-| `/sdd:doc-spec-query` | Answer cross-service feature/spec questions by reading the spec registry. Specs are stored by `/sdd:doc-spec` or by the SDD pipeline's `/sdd:mr`. |
 | `/sdd:doc-investigation` | Capture the current session into a fixed-shape document — `bug` (Problem → … → Fix), `exploration` (Question → … → Future Signals), or `improvements` (Goal → Gap Analysis → Plan → Out of Scope), a forward-looking remediation plan — and store it at `~/.claude/investigation-registry/<service>/`. Synthesizes from the conversation; run it in any repo, even one that isn't yours. |
-| `/sdd:doc-investigation-query` | Answer recall/recurrence questions by reading the investigation registry at `~/.claude/investigation-registry/<service>/`. Ask "have we seen this before?", "which investigations touch LeadService?". |
-| `/sdd:ask` | **Unified query** across all four registries. Grounds every answer in the `raw/` registries (the source of truth) and, when a `wiki/` layer exists, follows its `[[backlinks]]` for cross-cutting questions ("who consumes X *and* why we designed it that way"). Warns when the wiki is stale; optional `type:` filter. **Subsumes** the four `doc-*-query` commands. |
+| `/sdd:ask` | **One query** across all four registries. `lib/registry.py` loads only the documents that match the question, within a budget (an index of every doc is always printed). Grounds every answer in `raw/` and, when a `wiki/` layer exists, follows its `[[backlinks]]` for cross-cutting questions ("who consumes X *and* why we designed it that way"). Warns when the wiki is stale; optional `type:` / `service:` filters. |
+| `/sdd:doc-catalog-query` · `/sdd:doc-adr-query` · `/sdd:doc-spec-query` · `/sdd:doc-investigation-query` | Deprecated aliases of `/sdd:ask type:<artifact>`. |
 | `/sdd:doc-ingest` | Compile `raw/` → `wiki/` in a two-layer vault: extract entities + concepts, write pages with `[[backlinks]]`, update indexes + log. The *producer* that keeps `/sdd:ask` sharp. No-op on a plain registry (no `wiki/` layer). |
 
 ## Two-layer vault (optional, powers `/sdd:ask`)
@@ -29,7 +26,7 @@ $CLAUDE_DOC_HOME (raw/)  ──/sdd:doc-ingest──►  ../wiki/  ──/sdd:as
 
 - `raw/` is always current (the `doc-*` commands write it directly).
 - `wiki/` is an **explainable-RAG index** — explicit backlinks you can audit — refreshed by `/sdd:doc-ingest`.
-- `/sdd:ask` **navigates the wiki but grounds answers in raw/**, so it stays correct even if the wiki is stale (it warns and falls back to `raw/`, degrading to "the four typed queries, merged").
+- `/sdd:ask` **navigates the wiki but grounds answers in raw/**, so it stays correct even if the wiki is stale (it warns and answers from `raw/`).
 
 On a plain registry (the default `~/.claude`, no `wiki/`), `/sdd:doc-ingest` is a no-op and `/sdd:ask` just reads the `raw/` registries directly.
 
@@ -40,29 +37,29 @@ Catalogs (one per service):
   /sdd:doc-catalog        →  generate + store  ~/.claude/service-catalog/<service>.md
        │
        ▼
-  /sdd:doc-catalog-query  →  cross-service architecture questions
+  /sdd:ask type:catalog   →  cross-service architecture questions
 
 ADRs (many per service):
   /sdd:doc-adr            →  create + store  ~/.claude/adr-registry/<service>/<TICKET>-ADR-NNN-*.md
        │
        ▼
-  /sdd:doc-adr-query      →  cross-service decision-history questions
+  /sdd:ask type:adr       →  cross-service decision-history questions
 
 Specs (one per feature):
   /sdd:doc-spec           →  store  ~/.claude/spec-registry/<service>/<slug>-spec.md
   /sdd:mr (sdd)         →  (same destination, automatically, inside the SDD pipeline)
        │
        ▼
-  /sdd:doc-spec-query     →  cross-service feature/spec questions
+  /sdd:ask type:spec      →  cross-service feature/spec questions
 
 Investigations (many per service):
   /sdd:doc-investigation        →  ~/.claude/investigation-registry/<service>/<date>-<slug>.md
        │                            (capture + write happen in one step, from the session)
        ▼
-  /sdd:doc-investigation-query  →  recall / recurrence questions across findings
+  /sdd:ask type:investigation  →  recall / recurrence questions across findings
 ```
 
-All four families follow the same shape: `doc-<artifact>` is run inside each service repo and writes straight to the registry (no in-repo copy); `doc-<artifact>-query` reads the entire registry from anywhere. For specs there are two ways to store: `/sdd:doc-spec` for hand-written or standalone specs, and the SDD bundle's `/sdd:mr`, which stores automatically when a `.specwork/` spec exists.
+All four families follow the same shape: `doc-<artifact>` is run inside each service repo and writes straight to the registry (no in-repo copy); `/sdd:ask` reads every registry from anywhere (the `type:` filter is optional). For specs there are two ways to store: `/sdd:doc-spec` for hand-written or standalone specs, and the SDD bundle's `/sdd:mr`, which stores automatically when a `.specwork/` spec exists.
 
 ## Registry location
 

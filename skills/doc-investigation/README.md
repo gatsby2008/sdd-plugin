@@ -27,7 +27,7 @@ When you dig into code — frequently in a repo that isn't yours — you figure 
 
 Run it at any point — the moment things "click." You can run it again later in the same session to capture a fuller version; each run writes a new dated file.
 
-`list` is read-only and **scoped to the current repo's service** — it shows what's already captured for this service (filename, type, title), newest first. To search *across* services or by content, use `/sdd:doc-investigation-query`.
+`list` is read-only and **scoped to the current repo's service** — it shows what's already captured for this service (filename, type, title), newest first. To search *across* services or by content, use `/sdd:ask`.
 
 ---
 
@@ -51,7 +51,7 @@ bug                  exploration           improvements
   Change (the concrete edit) · Verify (how to confirm) — so any agent can act on it.
 ```
 
-`bug` and `exploration` are backward-looking (what broke / how it works); `improvements` is forward-looking (what to change — a remediation plan with ADOPT/PARTIAL/REJECT verdicts and an Out of Scope section). The type is chosen up front — inferred from the session and offered for you to pick, or forced with `/sdd:doc-investigation bug`, `… explore`, or `… improvements`. All three shapes end in **Future Signals** — the reusable "next time, check/start here" pointer. The chosen type is saved in the file's frontmatter so `/sdd:doc-investigation-query` can filter on it.
+`bug` and `exploration` are backward-looking (what broke / how it works); `improvements` is forward-looking (what to change — a remediation plan with ADOPT/PARTIAL/REJECT verdicts and an Out of Scope section). The type is chosen up front — inferred from the session and offered for you to pick, or forced with `/sdd:doc-investigation bug`, `… explore`, or `… improvements`. All three shapes end in **Future Signals** — the reusable "next time, check/start here" pointer. The chosen type is saved in the file's frontmatter so `/sdd:ask` can filter on it.
 
 It pulls only from the conversation — it does not re-scan the code or invent class names. Anything not actually discussed is marked `[TBD]`; anything deduced is marked `[INFERRED]`. You see the full draft (including those markers) and the destination path, then it writes — there's no yes/no write gate, since you already chose the type up front.
 
@@ -71,7 +71,7 @@ Use `/sdd:doc-adr` instead when you're recording a *decision* (immutable, supers
 
 ## Output / Next Step
 
-A Markdown file in `~/.claude/investigation-registry/<service>/<date>-<slug>.md`. Search across everything you've captured with `/sdd:doc-investigation-query`.
+A Markdown file in `~/.claude/investigation-registry/<service>/<date>-<slug>.md`. Search across everything you've captured with `/sdd:ask`.
 
 ---
 
@@ -90,6 +90,6 @@ Point `$CLAUDE_DOC_HOME` at a cloned shared repo: `export CLAUDE_DOC_HOME=/path/
 
 ## Related Skills
 
-- `/sdd:doc-investigation-query` — ask questions across all captured investigations
+- `/sdd:ask` — ask questions across all captured investigations
 - `/sdd:doc-adr` — record an immutable architecture decision instead of a finding
 - `/sdd:spec` — author a forward-looking feature spec

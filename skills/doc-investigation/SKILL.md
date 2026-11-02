@@ -18,7 +18,7 @@ While researching code — often in a repo that is not your own — you uncover 
 something behaves the way it does. That knowledge normally evaporates when the
 session ends. This skill freezes it into a fixed template and files it in the
 central **investigation registry**, so it survives and can later be searched with
-`/sdd:doc-investigation-query`.
+`/sdd:ask`.
 
 The conversation **is** the source. The skill reads what has been discussed so far
 in this session and synthesizes it — it does not re-investigate the code. Anything
@@ -41,7 +41,7 @@ All three live under `${CLAUDE_PLUGIN_ROOT}/templates/`. **Read the chosen one a
 of the run and fill its placeholders — never hand-write the structure from memory.**
 Never rename, reorder, add, or drop a section. If a section has no content from the
 session, keep the heading and write `[TBD]` under it. The `type` frontmatter field is
-set to the chosen type so `/sdd:doc-investigation-query` can filter on it.
+set to the chosen type so `/sdd:ask` can filter on it.
 
 ---
 
@@ -69,7 +69,7 @@ investigations already registered for the **current repo's service** and exit be
 any capture logic runs. (`list` is reserved; to capture an investigation whose title is
 literally "list", pass it differently, e.g. `/sdd:doc-investigation bug list`.)
 
-Unlike `/sdd:doc-investigation-query`, which spans the whole registry, `list` is scoped
+Unlike `/sdd:ask`, which spans the whole registry, `list` is scoped
 to one service — the repo you are in.
 
 1. Detect the target service exactly as Step 2 does (`spring.application.name` →
@@ -97,7 +97,7 @@ done
 
 The date prefix in each filename sorts naturally; `-1t` also surfaces the most recent
 first. After listing, exit — do not proceed to capture. To search **across** services
-or by content, use `/sdd:doc-investigation-query`.
+or by content, use `/sdd:ask`.
 
 ---
 
@@ -239,7 +239,7 @@ Use `untracked` when not inside a git repo (e.g. pasted code). The `improvements
 template additionally carries `status` (default `proposed` on a fresh capture; lifecycle
 `proposed → in-progress → done`, or `superseded` / `abandoned`) and `updated` (set to
 today's date) — these are meant to be revised as the plan progresses.
-The frontmatter is metadata only — it lets `/sdd:doc-investigation-query` cite and filter
+The frontmatter is metadata only — it lets `/sdd:ask` cite and filter
 by type — and the H1 sections below it (nine for bug, eight for exploration, seven for
 improvements) are the document. Keep every heading even when a section is `[TBD]`.
 
@@ -284,7 +284,7 @@ List the actual files now under that service so the user sees the result:
 ls -1 "${CLAUDE_DOC_HOME:-$HOME/.claude}/investigation-registry/<service>"/*.md 2>/dev/null | xargs -n1 basename | sort
 ```
 
-Then print a short confirmation and remind that `/sdd:doc-investigation-query` can
+Then print a short confirmation and remind that `/sdd:ask` can
 search across all captured investigations.
 
 ---
@@ -310,6 +310,6 @@ search across all captured investigations.
 
 ## Related Skills
 
-- `doc-investigation-query` — searches everything this skill captures
+- `ask` — one query across every registry (investigation included); `doc-investigation-query` is its deprecated alias
 - `doc-adr` — for capturing a *decision* (immutable, supersede-only) rather than a finding
 - `spec` (sdd bundle) — for forward-looking feature specs vs. backward-looking investigations

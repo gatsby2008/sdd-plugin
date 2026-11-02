@@ -386,38 +386,26 @@ STANDALONE TOOLS  (independent — run on any branch, any time, no pipeline requ
                          service-catalog registry at $CLAUDE_DOC_HOME/service-catalog/
                          (default ~/.claude/; no in-repo copy). /sdd:doc-catalog list shows the registry.
 
-  /sdd:doc-catalog-query     Cross-service architecture questions answered from the
-                         central registry. Example:
-                           /sdd:doc-catalog-query who consumes the LeadCreated SNS event?
-
-  /sdd:doc-adr-query         Cross-service decision-history questions answered from
-                         the ADR registry. Example:
-                           /sdd:doc-adr-query why did consumer-portal pick PostgreSQL?
-
   /sdd:doc-spec              Store a hand-written / standalone spec.md in the central
                          spec registry at $CLAUDE_DOC_HOME/spec-registry/<service>/
                          (default: ~/.claude/). The pipeline's /sdd:mr stores it
                          automatically; this is the vibe-coding counterpart. /sdd:doc-spec list shows the registry.
-
-  /sdd:doc-spec-query        Cross-service feature/spec questions answered from the
-                         spec registry. Example:
-                           /sdd:doc-spec-query which specs touch LeadProcessor?
 
   /sdd:doc-investigation     Capture the current session's investigation into a typed
                          findings doc (bug or exploration) at
                          $CLAUDE_DOC_HOME/investigation-registry/<service>/. Auto-detects
                          the type; run it in any repo after researching code.
 
-  /sdd:doc-investigation-query  Recall/recurrence questions over captured investigations.
+  /sdd:ask                   One query across all registries (catalog/adr/spec/
+                         investigation). Loads only the docs that match, grounds answers
+                         in raw/, and follows wiki/ backlinks when that layer exists
+                         (warns if it is stale). Optional type:/service: filters.
                          Examples:
-                           /sdd:doc-investigation-query have we seen ReportToken reuse before?
-                           /sdd:doc-investigation-query how does a lead reach the cache?
-
-  /sdd:ask                   UNIFIED query across all registries (catalog/adr/spec/
-                         investigation). Grounds answers in raw/ (source of truth), and
-                         when a two-layer vault has a wiki/ layer, follows its backlinks
-                         for cross-cutting questions; warns if the wiki is stale.
-                         Optional type: filter. Subsumes the four doc-*-query commands.
+                           /sdd:ask who consumes the LeadCreated SNS event?
+                           /sdd:ask why did consumer-portal pick PostgreSQL?
+                           /sdd:ask type:spec which specs have open questions?
+                           /sdd:ask have we seen ReportToken reuse before?
+                         The four /sdd:doc-*-query commands are deprecated aliases.
                            /sdd:ask who consumes LeadCreated and why did we design it that way?
 
   /sdd:doc-ingest            Compile raw/ → wiki/ in a two-layer vault: extract entities +

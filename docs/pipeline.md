@@ -20,14 +20,11 @@ INDEPENDENT: Documentation & Knowledge (any branch, any time)
    /sdd:undo — are listed in the "Just want to code?" section of sdd-overview.md)
   (the doc commands below ship in the same plugin — see doc-overview.md)
   /sdd:doc-catalog       — generate service catalog + store in central registry (or `list`)
-  /sdd:doc-catalog-query — cross-service architecture queries against the registry
   /sdd:doc-adr           — capture an architectural decision + store in central registry (or `list`)
-  /sdd:doc-adr-query     — cross-service decision-history queries against the ADR registry
   /sdd:doc-spec          — store a feature spec.md in the central spec registry (or `list`)
-  /sdd:doc-spec-query    — cross-feature queries against stored specs
   /sdd:doc-investigation       — capture a session investigation + store in central registry
-  /sdd:doc-investigation-query — recall/recurrence queries over captured investigations
-  /sdd:ask               — unified query across all four registries (+ wiki layer when present)
+  /sdd:ask               — one query across all four registries (+ wiki layer when present);
+                           the /sdd:doc-*-query commands are deprecated aliases
   /sdd:doc-ingest        — compile raw/ registries into the wiki/ layer (two-layer vault only)
 
 INDEPENDENT: Java Review Packs (deep-dive reviewers, any branch, any time)

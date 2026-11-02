@@ -1,6 +1,6 @@
 # Spec Registry
 
-Store a feature `spec.md` in the central spec registry so `/sdd:doc-spec-query` can read
+Store a feature `spec.md` in the central spec registry so `/sdd:ask` can read
 it. This is the **registry side** of the spec lifecycle (authoring is still
 `/sdd:spec`) and the **standalone / vibe-coding** counterpart to the SDD pipeline's
 `/sdd:mr`, which already publishes specs automatically when a `.specwork/` artifact
@@ -30,7 +30,7 @@ way `/sdd:doc-catalog` and `/sdd:doc-adr` resolve it, so all registries stay ali
 
 - **Store-only.** It copies the file verbatim — it never generates a spec from
   your diff and never rewrites your content.
-- The destination filename always ends in `-spec.md` (that is what `/sdd:doc-spec-query`
+- The destination filename always ends in `-spec.md` (that is what `/sdd:ask`
   discovers).
 - For richer query answers, the spec should follow the canonical SDD sections
   (`## Summary`, `## Behavior`, `## Scope`, `## Implementation Context`,

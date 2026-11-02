@@ -232,12 +232,11 @@ Today only one file is auto-populated:
 
 ## Documentation & Knowledge Registry
 
-`/sdd:doc-catalog`, `/sdd:doc-catalog-query`, `/sdd:doc-adr`, `/sdd:doc-adr-query`,
-`/sdd:doc-spec`, `/sdd:doc-spec-query`, `/sdd:doc-investigation`, and
-`/sdd:doc-investigation-query` form the documentation family. Each artifact has two
-commands following one shape: `doc-<artifact>` creates and stores it in the central
-registry (with `list` as a subcommand), and `doc-<artifact>-query` reads the registry
-back. There is no separate `publish` step — creating an artifact stores it.
+`/sdd:doc-catalog`, `/sdd:doc-adr`, `/sdd:doc-spec`, `/sdd:doc-investigation` and
+`/sdd:ask` form the documentation family. Each artifact has one create command,
+`doc-<artifact>`, which stores it in the central registry (with `list` as a
+subcommand); `/sdd:ask` reads all four registries back with one query (`type:` to
+restrict it). The `doc-<artifact>-query` commands are deprecated aliases of it. There is no separate `publish` step — creating an artifact stores it.
 
 They operate on a shared registry (not `.specwork/` and **not** the service repo's
 working tree — nothing is committed alongside the code), so they work on any branch at

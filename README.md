@@ -62,7 +62,7 @@ sdd-plugin/
 │   ├── doc-catalog, doc-catalog-query, doc-adr, doc-adr-query,
 │   │   doc-spec, doc-spec-query,
 │   │   doc-investigation, doc-investigation-query,
-│   │   doc-ingest, ask       (two-layer wiki: compile raw→wiki, unified query)
+│   │   doc-ingest, ask       (ask: one query over all registries; *-query: deprecated aliases)
 │   └── api-contract-review, concurrency-review, jpa-patterns, logging-patterns
 ├── agents/
 │   ├── java/  → sdd:java:quality-reviewer, sdd:java:security-reviewer
