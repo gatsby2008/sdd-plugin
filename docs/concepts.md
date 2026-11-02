@@ -66,7 +66,7 @@ rather than guessing; the two marked *(advisory)* only report and never block.
 | **Test coverage** | `/sdd:commit` + `PreToolUse` hook | A changed production class (Java `src/main/*.java`, frontend `*.tsx/.ts`) with no matching test (`*Test`/`*IT`, `*.test`/`*.spec`) blocks the commit. DTOs, config, entities, and barrels are excluded. The only escape is a per-class waiver-with-reason in `.specwork/_test/<slug>-coverage-waivers.json` (pipeline) or `.sdd-coverage-waivers.json` (standalone) |
 | **Spec conformance** *(advisory)* | `/sdd:commit` | Lists spec Behaviors (`**B1**`, `**B2**`, … in `## Behavior`) that no test tags with `spec: B<n>` in lines added on the branch. Never blocks; silent for specs without ids. Deterministic grep (`lib/conformance.py`) — no LLM review |
 | **High-risk auditor** *(advisory)* | `/sdd:commit` | Only for pipelines triaged `high-risk`: runs `/sdd:code-review` (report-only) once per distinct staged diff and stamps a receipt (`_review/<slug>-audit.json`: diff fingerprint + verdict). Never blocks; other tiers pay no extra tokens |
-| **Quality (`check.sh`)** | `/sdd:mr` + `PreToolUse` hook | `commands/check.sh` (the project's full validation suite) must pass before a `git push`. `/sdd:mr` runs it, then stamps the validated HEAD; the hook blocks any push whose HEAD wasn't stamped. No-ops when the repo has no `commands/check.sh` |
+| **Quality (`check.sh`)** | `/sdd:mr` + `PreToolUse` hook | `commands/check.sh` (the project's full validation suite) must pass before a `git push`. `/sdd:mr` runs it, then stamps the validated HEAD; the hook blocks any push whose HEAD wasn't stamped. No-ops when the repo has no `commands/check.sh`. On red, `/sdd:mr` offers a guarded Repair Loop (below) |
 
 `/sdd:spec` also **warns** (does not block) when `plan.md` is stale or the tree has
 uncommitted changes — the actual block happens later, in `/sdd:implement`.
@@ -90,6 +90,16 @@ Like the coverage hook it is scoped to `.specwork/`, fails open, and additionall
 no-ops when the repo defines no `commands/check.sh` (nothing to enforce). This is
 why a raw `git push` — or `/sdd:commit`'s push offer — on an unvalidated HEAD is
 blocked, while the `/sdd:mr` flow passes silently.
+
+When `check.sh` fails, `/sdd:mr` offers a **Repair Loop** — it asks first, and
+`/sdd:auto` runs it without asking: fix the code, re-run `check.sh`, at most **3
+attempts**, and never push on red. A loop is only as good as a metric it cannot
+edit, so after each attempt `lib/repair.py guard <base>` compares the tree with
+the commit the loop started from and rejects any change to `check.sh`, any removed
+or modified line in an existing test file, a deleted test file, and any added
+skip/disable marker (`@Disabled`, `@pytest.mark.skip`, `it.skip(` …). New tests
+and new assertions are allowed. A rejection stops the loop on the spot. The
+guard keeps no state — the base is just the `HEAD` sha at the first failure.
 
 ### Awareness hooks (non-blocking)
 

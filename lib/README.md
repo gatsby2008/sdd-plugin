@@ -52,3 +52,16 @@ python3 ${CLAUDE_PLUGIN_ROOT}/lib/gates.py worktree-freshness <slug>
 ```
 
 Replace inline Python heredocs (`python3 - <<'PY'`) across all SDD skills with these commands to reduce token consumption by keeping script logic outside the LLM context window.
+
+## repair.py
+
+Metric guard for `/sdd:mr`'s Repair Loop. After each repair attempt it compares the
+working tree with the commit the loop started from and rejects any change to
+`commands/check.sh`, removed or modified lines in existing test files, deleted test
+files, and added skip/disable markers. Stateless.
+
+```bash
+REPAIR_BASE="$(git rev-parse HEAD)"   # at the first check.sh failure
+python3 ${CLAUDE_PLUGIN_ROOT}/lib/repair.py guard "$REPAIR_BASE"   # 0 clean · 1 violations · 2 bad ref
+```
+

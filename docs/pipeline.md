@@ -126,6 +126,7 @@ up front and the rest of the pipeline flows.
 - If no pipeline exists, confirms the branch at `/sdd:start` (suggested branch / keep current / custom name); if a pipeline already exists, skips `/sdd:start` and continues on the current branch
 - **Hard stop** if the drafted spec has unresolved Open Questions (won't guess past them) — resolve them with `/sdd:spec` and, in non-interactive mode, the pipeline continues automatically through plan, implement, commit, and the MR
 - Runs `/sdd:commit` (coverage gate + semantic commit) → `/sdd:mr` automatically, then **stops at the open MR** (never `/sdd:close` or `/sdd:mr-address`). Run `/sdd:test-design` + `/sdd:test-impl` by hand beforehand if the change warrants tests
+- On a red `check.sh` it runs `/sdd:mr`'s Repair Loop without asking (max 3 guarded attempts); still red → stops without pushing
 - Best for trivial/focused tickets; drive the steps by hand for large or ambiguous work
 
 ### `/sdd:start <ticket-or-text>`
@@ -205,7 +206,7 @@ up front and the rest of the pipeline flows.
 
 ### `/sdd:mr`
 - **Pre-push validation**: runs test suite before push
-  - If tests fail → stops, does not push
+  - If tests fail → offers the **Repair Loop** (asks first): fixes the code and re-runs `check.sh`, max 3 attempts. A guard rejects any attempt that edits `check.sh`, changes existing tests, or skips one. Still red, declined, or rejected → stops, does not push
   - If tests pass → continues
 - Builds concise MR title/description from spec + commits
 - Optional publish: `.specwork/_spec/...` -> `docs/specs/...`
@@ -268,3 +269,24 @@ The pipeline supports repeated implementation steps before you commit:
 If you need to **discard a failed implementation** but keep the pipeline state to
 re-spec, use **`/sdd:undo`** (reversible by default; `--restore` to recover, `--hard`
 to force). See the runbook in [concepts.md](concepts.md#reverting-a-failed-implementation).
+
+---
+
+## Recurring Tasks (`/loop`, `/schedule`)
+
+The pipeline itself never repeats on a timer, but Claude Code's own `/loop`
+(in-session, on an interval) and `/schedule` (cloud, on a cron) work well around it:
+
+```bash
+/loop 10m check the CI pipeline of this branch's MR and tell me when it finishes
+/schedule every weekday at 9:00 run /sdd:doc-ingest
+```
+
+- Good fits: read-only watching (CI, MR status) and keeping the knowledge base fresh
+  (`/sdd:doc-ingest`, so `/sdd:ask` does not answer from a stale wiki).
+- Do not put `/sdd:mr-address`, `/sdd:auto`, or `/sdd:close` on a loop: they push,
+  open MRs, or delete state, and each run needs a human decision.
+- An open-ended loop ("improve the project" until an iteration cap) has no stop
+  condition except the cap. Write a spec instead; the only loop the pipeline runs is
+  `/sdd:mr`'s Repair Loop, which stops on a green `check.sh` it cannot edit.
+

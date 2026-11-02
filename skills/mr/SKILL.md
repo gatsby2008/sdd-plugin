@@ -2,7 +2,7 @@
 name: mr
 description: Generate MR description, publish the spec to docs/specs/ and the central spec registry when a .specwork artifact exists, and create or update GitLab MR
 argument-hint: "[--skip-validation]"
-allowed-tools: Read, Write, Bash(find .specwork:*), Bash(cat .specwork/_spec/*), Bash(cat .specwork/_review/*), Bash(cat ${CLAUDE_PLUGIN_ROOT}/lib/jira.sh), Bash(git rev-parse:*), Bash(git log:*), Bash(git diff:*), Bash(git branch:*), Bash(git add:*), Bash(git commit:*), Bash(git push:*), Bash(git fetch:*), Bash(git rebase:*), Bash(mkdir:*), Bash(mv:*), Bash(cp:*), Bash(readlink:*), Bash(test:*), Bash(sed:*), Bash(glab:*), Bash(curl:*), Bash(grep:*), Bash(command -v:*), Bash(python3:*), Bash(./gradlew:*), Bash(bash ${CLAUDE_PLUGIN_ROOT}/lib/spec-publish.sh:*)
+allowed-tools: Read, Write, Edit, Bash(find .specwork:*), Bash(cat .specwork/_spec/*), Bash(cat .specwork/_review/*), Bash(cat ${CLAUDE_PLUGIN_ROOT}/lib/jira.sh), Bash(git rev-parse:*), Bash(git log:*), Bash(git diff:*), Bash(git branch:*), Bash(git add:*), Bash(git reset -q -- .specwork), Bash(git commit:*), Bash(git push:*), Bash(git fetch:*), Bash(git rebase:*), Bash(mkdir:*), Bash(mv:*), Bash(cp:*), Bash(readlink:*), Bash(test:*), Bash(sed:*), Bash(glab:*), Bash(curl:*), Bash(grep:*), Bash(command -v:*), Bash(python3:*), Bash(./gradlew:*), Bash(bash ${CLAUDE_PLUGIN_ROOT}/lib/spec-publish.sh:*)
 ---
 
 # MR Description
@@ -36,7 +36,7 @@ If `.specwork` artifacts are missing, generate from git history only.
 5. Read commit history vs `origin/<target_branch>`
 6. Run branch sync check (behind count)
 7. Generate MR title (see [MR Title Generation](#mr-title-generation)) and compact description
-8. Pre-push validation — run `bash commands/check.sh` (see Pre-Push Validation)
+8. Pre-push validation — run `bash commands/check.sh` (see Pre-Push Validation); on failure, offer the [Repair Loop](#repair-loop) (max 3 attempts)
 9. Push branch (`git push -u origin HEAD`)
 10. Create MR via `glab` if available, otherwise print manual GitLab URL + copy/paste text
 11. Publish spec to the central registry (see [Publish Spec to Registry](#publish-spec-to-registry)) — skipped silently when no `.specwork` spec exists
@@ -213,6 +213,7 @@ for what it should contain. A template ships at
 - If `commands/check.sh` is missing, warn the user and ask for confirmation before pushing. Point them at the template so the next run is deterministic.
 - After a non-empty rebase (`BEHIND>0` and the rebase produced a diff), this validation is required — do not offer scoped/fast subsets. The goal is to validate what the rebase brought in, not the feature itself.
 - **Optional**: allow `--skip-validation` flag to bypass this step (for emergencies only)
+- If `check.sh` **fails**, do not push. Offer the [Repair Loop](#repair-loop) below; when it is declined or does not end green, stop and surface the failure.
 
 On a **green** `check.sh` (exit 0), stamp the validated HEAD before pushing:
 
@@ -230,6 +231,76 @@ when `HEAD` matches — so the push that follows here passes silently, while a r
 `git push` on an unvalidated HEAD is blocked. The hook is cheap (it never re-runs
 `check.sh`), so it adds no latency to this flow. Skip the stamp when validation
 was skipped via `--skip-validation` (the push will then be gated, by design).
+
+### Repair Loop
+
+A bounded loop against `check.sh`: fix the code, re-check, at most **3 attempts**.
+`check.sh` is the metric, so the loop must not be able to edit it —
+`lib/repair.py guard` enforces that in code after every attempt.
+
+**Ask first, unless non-interactive.** Detect the mode the same way `/sdd:commit` does:
+
+```bash
+if [ "${SDD_NON_INTERACTIVE:-0}" != "1" ] && [ -n "$SLUG" ]; then
+  SDD_MODE="$(python3 ${CLAUDE_PLUGIN_ROOT}/lib/gates.py non-interactive "$SLUG" 2>/dev/null || echo 0)"
+  [ "$SDD_MODE" = "1" ] && export SDD_NON_INTERACTIVE=1
+fi
+```
+
+- Interactive → ask, and stop on anything but yes:
+
+  ```text
+  ✗ check.sh failed (<one-line summary of what failed>).
+    Try to repair it? (max 3 attempts, without touching check.sh or existing tests) [y/N]
+  ```
+
+- Non-interactive (`/sdd:auto`) → start the loop without asking.
+
+Not offered with `--skip-validation`, when `commands/check.sh` is missing, or after a
+post-rebase failure (Branch Sync Check) — those keep their current behavior.
+
+**Start** — record the commit the loop is measured against:
+
+```bash
+REPAIR_BASE="$(git rev-parse HEAD)"
+```
+
+**Each attempt** (1 to 3):
+
+1. Read the `check.sh` output and find the cause (failing test, compile error, lint).
+2. Fix the **code**, staying inside the spec (and plan, when present). Allowed: production
+   code, and *new* lines or files in tests. Not allowed: editing `commands/check.sh`,
+   changing or removing existing test lines, deleting test files, or adding skip/disable
+   markers. Never special-case the failing test's inputs in production code (`if price == 200: …`)
+   — the guard cannot see that, so it is on you. If the test itself looks wrong, or the fix needs
+   a business decision the spec does not settle, stop — that is an Open Question, not a repair.
+3. Run the guard:
+
+   ```bash
+   python3 ${CLAUDE_PLUGIN_ROOT}/lib/repair.py guard "$REPAIR_BASE"
+   ```
+
+   Exit 1 (the change touched the metric) or 2 → **stop now**, print its output, do not
+   push. Leave the changes in the working tree for the user to inspect (`/sdd:undo`
+   discards them).
+4. Run `bash commands/check.sh`. Green → leave the loop. Red → next attempt.
+
+**Green** → commit the repair, then continue with the validation stamp and the push
+(the stamp below records the new HEAD, whose content is exactly what passed):
+
+```bash
+git add -A && git reset -q -- .specwork   # .specwork/ is pipeline state, never committed
+SUBJECT="$(python3 ${CLAUDE_PLUGIN_ROOT}/lib/titles.py commit-subject "$(git rev-parse --abbrev-ref HEAD)" fix "repair check.sh failures before push")"
+git commit -m "$SUBJECT" -m "<what failed and what was changed, one or two lines>"
+```
+
+**Still red after attempt 3** → stop, do not push:
+
+```text
+✗ check.sh still fails after 3 repair attempts. Nothing was pushed.
+  Last failure: <summary>
+  The attempts' changes are in the working tree — review them, or discard with /sdd:undo.
+```
 
 ---
 
@@ -308,6 +379,7 @@ Avoid long narrative descriptions unless explicitly requested.
 - Do not block on missing `.specwork` artifacts
 - Never force-push automatically
 - If push fails, surface the error and stop
+- Never push on a red `check.sh`; the Repair Loop is capped at 3 attempts and stops on any guard violation
 - If no `glab`, always provide a pre-filled manual MR URL
 
 ---

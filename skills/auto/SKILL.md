@@ -45,7 +45,7 @@ in order and enforces the gates between them.
 | 4 | `/sdd:plan` — discover targets, draft plan | — |
 | 5 | `/sdd:implement` — repeat until every plan target is done | — |
 | 6 | `/sdd:commit` — coverage gate + semantic commit (auto-continues to MR) | — |
-| 7 | `/sdd:mr` — push and open/update the MR, then **STOP** | — |
+| 7 | `/sdd:mr` — validate (with the repair loop on a red `check.sh`), push and open/update the MR, then **STOP** | Red `check.sh` after 3 repair attempts, or a repair that touches the metric: hard stop, no push |
 
 ---
 
@@ -189,6 +189,12 @@ Run `/sdd:mr`. It runs pre-push validation, pushes the branch, and opens or upda
 the MR. **This is where auto mode ends.** Hand control back to the user for
 review, merge, and close.
 
+If `check.sh` fails, `/sdd:mr` runs its Repair Loop **without asking** (non-interactive
+mode): up to 3 attempts to fix the code, each checked by `lib/repair.py guard` so a
+repair can never edit `check.sh`, change existing tests, or skip one. If it is still
+red after the third attempt, or the guard rejects an attempt, stop without pushing and
+surface the failure — never push on red.
+
 Print a short closing summary (branch, slug, MR link or manual URL) and stop.
 Do **not** run `/sdd:close` or `/sdd:mr-address`.
 
@@ -203,7 +209,7 @@ Do **not** run `/sdd:close` or `/sdd:mr-address`.
 - Only two pauses are allowed: (1) branch choice in `/sdd:start`, (2) unresolved Open Questions.
 - If `.specwork/` is already initialized, `/sdd:auto` must skip `/sdd:start` entirely (no branch-choice pause in that case).
 - The Open Questions gate (step 3) is the only hard stop.
-- If any step fails, stop and surface the error — do not push past a failure.
+- If any step fails, stop and surface the error — do not push past a failure. The one bounded exception is `/sdd:mr`'s Repair Loop for a red `check.sh` (max 3 attempts, guarded); it still never pushes on red.
 - Do not skip a gate, and do not reorder steps.
 
 ---
