@@ -316,7 +316,7 @@ input** and the template as the section structure. Rules:
    `- [ ] **#N** <question>`. List every unresolved ambiguity you would
    otherwise have to guess.
 5. Each `## Behavior` item starts with a stable id: `1. **B1** — <behavior>`,
-   numbered `B1`, `B2`, … in order. Tests reference these ids (`spec: B<n>`) and
+   numbered `B1`, `B2`, … in order. Tests reference these ids qualified by the slug (`spec: <slug>#B<n>`) and
    `/sdd:commit` reports any id no test covers.
 6. NEVER touch `.specwork/_spec/<slug>-source.md` — it is immutable.
 

@@ -64,7 +64,7 @@ rather than guessing; the two marked *(advisory)* only report and never block.
 | **Plan required** | `/sdd:implement` | Only for pipelines triaged `high-risk` (`plan_required` in `_state/<slug>-path.json`): blocks until `plan.md` exists. Other tiers keep the plan optional. A tier forced with `/sdd:spec --tier <level> "<reason>"` wins, both ways; the automatic tier stays recorded under `override` |
 | **Plan staleness** | `/sdd:implement` | If `plan.md` exists and is older than `spec.md` (`spec.md` mtime > `plan.md` mtime — typically after `/sdd:spec` or a manual spec edit), the step blocks. Re-run `/sdd:plan`, or `rm` the plan to fall back to inline discovery |
 | **Test coverage** | `/sdd:commit` + `PreToolUse` hook | A changed production class (Java `src/main/*.java`, frontend `*.tsx/.ts`) with no matching test (`*Test`/`*IT`, `*.test`/`*.spec`) blocks the commit. DTOs, config, entities, and barrels are excluded. The only escape is a per-class waiver-with-reason in `.specwork/_test/<slug>-coverage-waivers.json` (pipeline) or `.sdd-coverage-waivers.json` (standalone) |
-| **Spec conformance** *(advisory)* | `/sdd:commit` | Lists spec Behaviors (`**B1**`, `**B2**`, … in `## Behavior`) that no test tags with `spec: B<n>` in lines added on the branch. Never blocks; silent for specs without ids. Deterministic grep (`lib/conformance.py`) — no LLM review |
+| **Spec conformance** *(advisory)* | `/sdd:commit` | Lists spec Behaviors (`**B1**`, `**B2**`, … in `## Behavior`) that no test tags with `spec: <slug>#B<n>` (or a bare `spec: B<n>`) in lines added on the branch. A tag naming another slug doesn't count. Never blocks; silent for specs without ids. Deterministic grep (`lib/conformance.py`) — no LLM review |
 | **High-risk auditor** *(advisory)* | `/sdd:commit` | Only for pipelines triaged `high-risk`: runs `/sdd:code-review` (report-only) once per distinct staged diff and stamps a receipt (`_review/<slug>-audit.json`: diff fingerprint + verdict). Never blocks; other tiers pay no extra tokens |
 | **Quality (`check.sh`)** | `/sdd:mr` + `PreToolUse` hook | `commands/check.sh` (the project's full validation suite) must pass before a `git push`. `/sdd:mr` runs it, then stamps the validated HEAD; the hook blocks any push whose HEAD wasn't stamped. No-ops when the repo has no `commands/check.sh`. On red, `/sdd:mr` offers a guarded Repair Loop (below) |
 
@@ -212,6 +212,23 @@ lossy.
 
 - `docs/specs/<slug>-spec.md` — committed in the target repo, published by `/sdd:mr` when a pipeline spec exists
 - ADRs, catalogs, specs and investigations from the `/sdd:doc-*` commands live in the central registry (`$CLAUDE_DOC_HOME`), not in the repo — see [Documentation & Knowledge Registry](#documentation--knowledge-registry)
+
+### A spec is a change contract, not living documentation
+
+`spec.md` describes **one change**: it is drafted, refined and implemented within a
+feature and frozen when the MR merges. It is never updated by later features, so
+it is not "the current spec of capability X". What outlives the feature:
+
+- **Durable invariants** → the service rules (`.claude/service-rules.md`,
+  `.claude/rules/*.md`), promoted by `/sdd:close` Step 6.5. These are what every
+  later pipeline reads.
+- **History** → `docs/specs/<slug>-spec.md` and the spec registry, published by
+  `/sdd:mr`. Query it with `/sdd:ask type:spec`.
+
+Behavior ids (`B1`, `B2`, …) are unique only within one spec, so tests tag them
+with the slug — `spec: <slug>#B2` — and the tag still resolves to
+`docs/specs/<slug>-spec.md` months later. `/sdd:close` warns when that file is
+missing, since the tags would then point at a spec that no longer exists.
 
 ### `_progress/` — working execution memory
 

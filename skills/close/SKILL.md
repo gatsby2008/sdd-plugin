@@ -220,23 +220,33 @@ Use the actual filenames found, not the placeholder names above. Optional artifa
 
 ---
 
-## Step 5 — Note if Spec Was Published to docs/specs/
+## Step 5 — Check the Spec Was Published to docs/specs/
 
-Check if `.specwork/_spec/<slug>-spec.md` has a corresponding `docs/specs/<slug>-spec.md`.
+Skip this step when `.specwork/_spec/<slug>-spec.md` does not exist. Otherwise check
+for `docs/specs/<slug>-spec.md` in the working tree.
 
-If yes, note:
+If it exists, note:
 
 ```
 ✓ Spec published to docs/specs/<slug>-spec.md — will be preserved
 ```
 
-If no published spec exists, skip silently.
+If it does not, add this warning to Step 6 (`unpublished spec`) — the spec is the
+only record of the change, and tests tagged `spec: <slug>#B<n>` point at it:
+
+```
+⚠ Spec not published: docs/specs/<slug>-spec.md does not exist. Closing deletes the
+  only copy, and tests tagged `spec: <slug>#B<n>` will point at nothing.
+  Publish it with /sdd:mr, or keep a copy with /sdd:doc-spec .specwork/_spec/<slug>-spec.md.
+```
+
+Warn only — never block.
 
 ---
 
 ## Step 6 — Confirm
 
-Combine all relevant warnings (open MR, closed MR, unmoved spec, discarded changes) into a single confirmation:
+Combine all relevant warnings (open MR, closed MR, unpublished spec, discarded changes) into a single confirmation:
 
 ```
 <warnings, if any>

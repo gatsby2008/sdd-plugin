@@ -44,6 +44,27 @@ class TestTags(unittest.TestCase):
         lines = ["// spec: B1", '@DisplayName("spec: B2, B4 - does it")', "no tag B5"]
         self.assertEqual(conformance.tags_in(lines), {"B1", "B2", "B4"})
 
+    def test_slug_qualified_tags(self):  # spec: B3
+        lines = ["// spec: ir-70-consent#B1", '@DisplayName("spec: IR-70-Consent#B2, B4 - x")',
+                 "# spec: other-feature#B3"]
+        self.assertEqual(conformance.parse_tags(lines), {
+            ("ir-70-consent", "B1"), ("ir-70-consent", "B2"),
+            ("ir-70-consent", "B4"), ("other-feature", "B3")})
+
+    def test_slug_carries_until_the_next_one(self):  # spec: B3
+        self.assertEqual(conformance.parse_tags(["# spec: a#B1, B2, b#B3, B4"]), {
+            ("a", "B1"), ("a", "B2"), ("b", "B3"), ("b", "B4")})
+
+    def test_bare_tags_have_no_slug(self):  # spec: B3
+        self.assertEqual(conformance.parse_tags(["# spec: B1, B2"]),
+                         {(None, "B1"), (None, "B2")})
+
+    def test_only_own_or_bare_tags_count_for_a_slug(self):  # spec: B3
+        lines = ["# spec: x#B1", "# spec: B2", "# spec: other#B3"]
+        self.assertEqual(conformance.tags_in(lines, "x"), {"B1", "B2"})
+        self.assertEqual(conformance.tags_in(lines, "X"), {"B1", "B2"})
+        self.assertEqual(conformance.tags_in(lines), {"B1", "B2", "B3"})
+
     def test_uncovered_keeps_spec_order(self):  # spec: B5
         self.assertEqual(conformance.uncovered(["B1", "B2", "B3"], {"B2"}), ["B1", "B3"])
 
@@ -133,6 +154,15 @@ class TestCheckEndToEnd(unittest.TestCase):
         code, out = self._run()
         self.assertEqual(code, 0)
         self.assertIn("✓", out)
+
+    def test_slug_tags_count_and_other_slugs_do_not(self):  # spec: B3
+        self._write(".specwork/_spec/x-spec.md",
+                    "## Behavior\n\n1. **B1** — a\n2. **B2** — b\n3. **B3** — c\n")
+        self._write("tests/test_new.py", "# spec: x#B1, B3\n# spec: other#B2\n")
+        code, out = self._run()
+        self.assertEqual(code, 0)
+        self.assertIn("`spec: x#B<n>`", out)
+        self.assertTrue(out.rstrip().endswith("`: B2"), out)
 
     def test_spec_without_ids_is_silent(self):  # spec: B5
         self._write(".specwork/_spec/x-spec.md", "## Behavior\n\n1. legacy behavior\n")

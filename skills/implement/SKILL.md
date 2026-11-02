@@ -176,7 +176,7 @@ Create or update tests for every changed behavior — focused on the spec's beha
 - **Bug fixes**: a regression test that fails before the fix and passes after
 - No testable surface → state the reason explicitly before proceeding
 
-**Tag tests with the Behavior they cover.** When `## Behavior` items carry ids (`**B1**`, …), mark each test you write or change with the id(s) it verifies, in a comment or display name: `// spec: B2`, `# spec: B1, B3`, `@DisplayName("spec: B2 - rejects null applicationId")`. `/sdd:commit` reads these tags from the lines added on this branch and reports any Behavior without one — a token-free conformance check. Skip tagging when the spec has no ids.
+**Tag tests with the Behavior they cover.** When `## Behavior` items carry ids (`**B1**`, …), mark each test you write or change with the id(s) it verifies, qualified by the slug, in a comment or display name: `// spec: <slug>#B2`, `# spec: <slug>#B1, B3` (the slug carries to the ids after it), `@DisplayName("spec: <slug>#B2 - rejects null applicationId")`. Ids are only unique within one spec; the slug keeps the tag meaningful after `.specwork/` is gone. `/sdd:commit` reads these tags from the lines added on this branch and reports any Behavior without one — a token-free conformance check. Skip tagging when the spec has no ids.
 
 ### Run individual tests
 

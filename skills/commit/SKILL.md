@@ -17,7 +17,7 @@ allowed-tools: Bash(git status:*), Bash(git diff:*), Bash(git rev-parse:*), Bash
 | 1 | Reads current branch, git status, and staged diff |
 | 2 | If nothing staged → offers to stage modified/new files from `git status` (see Auto-Stage Offer) |
 | 3 | **Test-coverage gate (STRICT)** — blocks if a changed production class has no matching test (see below) |
-| 3.5 | **Spec-conformance check (advisory)** — pipeline mode only: lists spec Behaviors with no `spec: B<n>`-tagged test; never blocks (see below) |
+| 3.5 | **Spec-conformance check (advisory)** — pipeline mode only: lists spec Behaviors with no `spec: <slug>#B<n>`-tagged test; never blocks (see below) |
 | 3.6 | **High-risk auditor (advisory)** — pipeline mode, `high-risk` tier only: runs `/sdd:code-review` once per distinct staged diff; never blocks (see below) |
 | 4 | Proposes a semantic commit message and waits for confirmation — **does not auto-commit** (see Format below) |
 | 5 | Makes the commit on approval |
@@ -134,10 +134,11 @@ Run right after the coverage gate, **only when `$SLUG` is set** (pipeline mode):
 ```
 
 It reads the Behavior ids (`**B1**`, `**B2**`, …) from the spec's `## Behavior`
-section and the `spec: B<n>` tags in test lines **added on this branch** (since the
+section and the `spec: <slug>#B<n>` tags in test lines **added on this branch** (since the
 merge-base with `base_branch`, committed or not, plus untracked test files), then
 prints the ids no test claims. Tags in unchanged lines don't count, so older
-features' tags can't satisfy this one.
+features' tags can't satisfy this one. A bare `spec: B<n>` (specs in flight before
+slugs) still counts; a tag naming another slug does not.
 
 - Always exits 0 — **never blocks**, in any mode. Show its one-line output above the
   commit-message proposal so the developer can add a tag or a test, or proceed.

@@ -3,10 +3,17 @@
 
 A deterministic, token-free stand-in for an LLM "implementation vs spec"
 review. Each Behavior in the spec carries a stable id (``1. **B1** — …``);
-``/sdd:implement`` tags every test it writes with the id(s) it covers
-(``// spec: B1`` or ``spec: B1, B3`` in a display name). This module diffs the
-branch, collects the tags from *added* test lines only, and reports the
-Behavior ids nobody tagged.
+``/sdd:implement`` tags every test it writes with the id(s) it covers, qualified
+by the spec slug (``// spec: <slug>#B1`` or ``spec: <slug>#B1, B3`` in a display
+name). Ids are only unique within one spec, so the slug keeps a tag meaningful
+after the feature closes. A bare ``spec: B1`` is still accepted and counts for
+the current spec. This module diffs the branch, collects the tags from *added*
+test lines only, and reports the Behavior ids nobody tagged.
+
+Tag grammar: ``spec:`` followed by comma-separated items, each ``[<slug>#]B<n>``.
+A slug applies to the bare ids that follow it in the same tag
+(``spec: a#B1, B3`` -> ``a#B1``, ``a#B3``). A tag naming another slug does not
+cover this spec.
 
 Advisory by design: ``check`` always exits 0 and fails open. A spec with no
 Behavior ids (older specs) is a silent no-op. Only added lines count, so tags
@@ -24,8 +31,9 @@ from pathlib import Path, PurePosixPath
 SPECWORK = ".specwork"
 
 _BEHAVIOR_ID = re.compile(r"\*\*B(\d+)\*\*")
-_TAG = re.compile(r"spec:\s*(B\d+(?:\s*,\s*B\d+)*)", re.IGNORECASE)
-_TAG_ID = re.compile(r"B(\d+)", re.IGNORECASE)
+_ITEM = r"(?:[a-z0-9][a-z0-9-]*#)?B\d+"
+_TAG = re.compile(r"spec:\s*({0}(?:\s*,\s*{0})*)".format(_ITEM), re.IGNORECASE)
+_TAG_ITEM = re.compile(r"(?:([a-z0-9][a-z0-9-]*)#)?B(\d+)", re.IGNORECASE)
 
 # Generic test-file patterns for stacks the coverage gate has no convention for.
 _TEST_DIRS = ("tests", "test", "__tests__")
@@ -51,13 +59,31 @@ def behavior_ids(spec_text):
     return ids
 
 
-def tags_in(lines):
-    """Set of Behavior ids referenced by ``spec: B<n>`` tags in ``lines``."""
+def parse_tags(lines):
+    """Set of ``(slug_or_None, "B<n>")`` pairs from ``spec:`` tags in ``lines``.
+
+    A slug carries over to the bare ids after it within the same tag.
+    """
     found = set()
     for line in lines:
         for group in _TAG.findall(line):
-            found.update("B" + n for n in _TAG_ID.findall(group))
+            current = None
+            for slug, n in _TAG_ITEM.findall(group):
+                if slug:
+                    current = slug.lower()
+                found.add((current, "B" + n))
     return found
+
+
+def tags_in(lines, slug=None):
+    """Behavior ids tagged in ``lines`` that count for spec ``slug``.
+
+    Bare tags always count; ``<slug>#B<n>`` counts only when the slug matches.
+    With ``slug=None`` every tag counts.
+    """
+    want = slug.lower() if slug else None
+    return {bid for tag_slug, bid in parse_tags(lines)
+            if tag_slug is None or want is None or tag_slug == want}
 
 
 def is_test_file(path, stack):
@@ -136,7 +162,7 @@ def covered_ids(slug, stack):
                 lines.extend(Path(path).read_text(encoding="utf-8", errors="replace").splitlines())
             except OSError:
                 continue
-    return tags_in(lines)
+    return tags_in(lines, slug)
 
 
 def _detect_stack():
@@ -159,7 +185,8 @@ def check(slug):
         missing = uncovered(ids, covered_ids(slug, _detect_stack()))
         if missing:
             print("⚠ Spec conformance: {} of {} Behavior(s) have no test tagged "
-                  "`spec: B<n>`: {}".format(len(missing), len(ids), ", ".join(missing)))
+                  "`spec: {}#B<n>`: {}".format(len(missing), len(ids), slug,
+                                                ", ".join(missing)))
         else:
             print("✓ Spec conformance: all {} Behavior(s) have a tagged test".format(len(ids)))
     except Exception:

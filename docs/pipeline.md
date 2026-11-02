@@ -186,7 +186,7 @@ up front and the rest of the pipeline flows.
 - Creates a single commit for all accumulated changes
 - Auto-stages modified/new files from `git status` when nothing is staged
 - **Test-coverage gate (strict)**: blocks the commit if a changed production class has no matching test (Java `*Test`/`*IT`, frontend `*.test`/`*.spec`). Pure data/wiring types (DTOs, config, entities, barrels) are not flagged. Waive a genuinely untestable class — with a written reason — in `.specwork/_test/<slug>-coverage-waivers.json` (or `.sdd-coverage-waivers.json` at the repo root when standalone)
-- **Spec-conformance check (advisory)**: reports spec Behaviors (`B1`, `B2`, …) with no test tagged `spec: B<n>` in lines added on the branch — never blocks
+- **Spec-conformance check (advisory)**: reports spec Behaviors (`B1`, `B2`, …) with no test tagged `spec: <slug>#B<n>` (bare `spec: B<n>` also accepted) in lines added on the branch — never blocks
 - **High-risk auditor (advisory)**: on `high-risk` pipelines only, runs `/sdd:code-review` automatically once per distinct staged diff (receipt in `_review/<slug>-audit.json`) — never blocks
 - Generates a semantic commit message; user approves before commit
 
@@ -220,6 +220,7 @@ up front and the rest of the pipeline flows.
 
 ### `/sdd:close`
 - Wipes `.specwork/` after merge (or reset)
+- Warns before wiping when the spec was never published to `docs/specs/<slug>-spec.md` — the spec and its test tags would be left without a record
 - Before wiping (interactive only), proposes up to 4 durable rules from the closed spec for `.claude/service-rules.md` or the matching `.claude/rules/*.md`; writes only the ones you approve, as new bullets tagged `_(from spec <slug>, <date>)_`. Existing hand-written rules are never edited — `lib/promote.py` refuses any write that would change an existing line
 - On a feature branch, offers to delete the local branch and switch back to the parent (never touches the remote branch)
 - Never reverts or deletes source-tree changes outside `.specwork/`

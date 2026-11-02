@@ -226,6 +226,12 @@ y merges permanentes.
 ### Esfuerzo
 A: **L** · B: **S** (doc + regex de conformance + un aviso en close + tests) · C: **M**.
 
+**Estado (2026-11-02).** B hecho. `concepts.md` documenta que el spec es un
+contrato de cambio; los tags pasan a `spec: <slug>#B<n>` (el slug se arrastra a
+los ids siguientes del mismo tag: `spec: <slug>#B1, B3`), `spec: B<n>` sigue
+valiendo y un tag con otro slug no cubre el spec actual. `/sdd:close` paso 5 avisa
+si falta `docs/specs/<slug>-spec.md`. C sigue pendiente.
+
 ---
 
 ## 6. Review en dos etapas por tarea (spec primero, calidad después)
