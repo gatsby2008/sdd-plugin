@@ -31,20 +31,23 @@ registry (reproducing a single-registry query); omit it to search across all fou
 
 ## What it does
 
-1. Optional `type:` scope.
-2. If a `wiki/` layer exists → reads `wiki.md` + folder-notes, follows `[[backlinks]]` to
-   find what's relevant and which `raw/` sources it cites.
-3. Reads the actual `raw/` files (the facts); falls back to grepping `raw/` directly when
-   the wiki has no page or isn't there.
-4. **Staleness check** — if `raw/` has sources added since the last ingest that bear on
-   the question, it warns (and still answers from `raw/`).
-5. Answers, citing `raw/` files (and the wiki pages it navigated through).
+1. Runs `lib/registry.py ask` with your question verbatim. It prints an **index** of
+   every doc, the **best-matching docs** (large ones trimmed to the matching sections)
+   within a budget (`SDD_ASK_BUDGET`, default 60 000 characters), other matches by path,
+   and reading hints. Only what matters is loaded — not the whole registry.
+2. When a `wiki/` layer exists, reports its last ingest and warns when `raw/` docs
+   changed after it; the skill then navigates the wiki's `[[backlinks]]` for
+   cross-cutting questions.
+3. Reads anything relevant that was not loaded, then answers citing `raw/` files.
+
+`type:` / `service:` are optional: without them `ask` searches everything and ranks by
+relevance. A service named in the question boosts its docs but does not filter —
+"who consumes X from leads-service?" still needs the other services' catalogs.
 
 ## Supersedes
 
-`/sdd:ask` subsumes `/sdd:doc-catalog-query`, `/sdd:doc-adr-query`, `/sdd:doc-spec-query`, and
-`/sdd:doc-investigation-query` — those read one registry each; `ask` reads across all of
-them and can still scope with `type:`.
+`/sdd:doc-catalog-query`, `/sdd:doc-adr-query`, `/sdd:doc-spec-query` and
+`/sdd:doc-investigation-query` are deprecated aliases of `/sdd:ask type:<registry>`.
 
 ## Related Skills
 
