@@ -30,6 +30,26 @@ from gates import (
 )
 
 
+def _own_service():
+    """This repo's registry key, via the shared resolver in lib/service-name.sh."""
+    lib = Path(__file__).resolve().parent / "service-name.sh"
+    try:
+        out = subprocess.run(["bash", "-c", '. "$1" && resolve_service_name', "_", str(lib)],
+                             capture_output=True, text=True, timeout=10)
+        return out.stdout.strip()
+    except (OSError, subprocess.SubprocessError):
+        return ""
+
+
+def cross_service_impact(spec_text):
+    """`## Cross-Service Impact` markdown from the other services' catalogs."""
+    try:
+        from registry import render_impact
+        return render_impact(spec_text, _own_service())
+    except Exception:
+        return "## Cross-Service Impact\n\n_Impact not checked (registry unreadable)._\n"
+
+
 def find_mock_consumer_tests(stack, target_files):
     """For Java, find test files that reference target service classes."""
     if stack != "java":
@@ -189,6 +209,7 @@ def main():
         "plan_oqs": [],
         "cache_updates": {"repositories": [], "related_tests": []},
         "infra_hints": [],
+        "cross_service_impact_md": "",
         "errors": [],
     }
 
@@ -283,6 +304,9 @@ def main():
         })
 
     result["target_files"] = target_files
+
+    # ---- Cross-service impact (read-only; never blocks the plan) ----
+    result["cross_service_impact_md"] = cross_service_impact(spec_text)
 
     # ---- Plan OQs from consistency ----
     for i, issue in enumerate(result["consistency_issues"], 1):

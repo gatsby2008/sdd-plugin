@@ -130,7 +130,11 @@ this is by design, not a failure.
 1. **Errors / Blockers:** If `open_questions_blocked` is `true`, or `errors` contains
    items, print the errors and abort with no writes.
 2. **Drafting the Plan:** Use the JSON payload (`target_files`, `risk_signals`,
-   `consistency_issues`, `plan_oqs`, `infra_hints`) to write the plan.
+   `consistency_issues`, `plan_oqs`, `infra_hints`) to write the plan. Paste
+   `cross_service_impact_md` **verbatim** as the plan's `## Cross-Service Impact`
+   section: other services whose catalog mentions an event, endpoint or queue the spec
+   touches. If a row shows a contract the spec changes, raise it in `## Open Questions`
+   (who must be told / coordinated) — do not decide it.
 3. **Cache:** The script updates `implementation-cache.json` automatically.
 
 ---

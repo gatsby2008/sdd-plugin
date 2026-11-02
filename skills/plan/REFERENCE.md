@@ -97,6 +97,12 @@ Affected Approach steps:
 - Step 2 — `db-migration`
 - Step 5 — `auth-security`
 
+## Cross-Service Impact
+
+<paste `cross_service_impact_md` from plan.py verbatim: a table of other services whose
+catalog mentions an event, endpoint or queue this spec touches — or the one-line
+"none found / not checked" note. Do not edit or extend it.>
+
 ## Risks / Constraints
 
 Free-form notes — rule conflicts, soft warnings, or risky areas the structured signals above didn't capture.
