@@ -12,6 +12,10 @@ Wipe `.specwork/` clean. This is the canonical cleanup command — run it after 
 
 ---
 
+`REF` below means `${CLAUDE_PLUGIN_ROOT}/skills/close/REFERENCE.md`. Read a `REF §` section only when its step needs it.
+
+---
+
 ## What It Does
 
 | Step | Action |
@@ -268,38 +272,14 @@ about the service into the service rules, so the next pipeline starts with it.
 `closed` (abandoned work teaches no rules), or when `.specwork/_spec/<slug>-spec.md`
 does not exist.
 
-1. **Read only the spec** — `## Safe Constraints` and the resolved (`- [x]`) items in
-   `## Open Questions`. Do not re-read the diff or the code; this step must stay cheap.
-2. **Pick candidates.** Keep only feature-agnostic, durable invariants: business rules,
-   ownership/identity rules, idempotency or fallback contracts, the *why* behind a design
-   choice. Drop ticket-only decisions, dates, rollout notes, and anything already stated
-   in the rules files (the template's "Out of Scope (Do Not Add Here)" list applies).
-   At most **4** candidates; zero is a normal outcome — then print
-   `No durable rules to promote.` and go to Step 7.
-3. **Choose a target per candidate.** If `.claude/rules/*.md` exist, pick the topic file
-   whose subject matches, and a section heading inside it. Otherwise target
-   `.claude/service-rules.md` and one of its sections (`Business Invariants`,
-   `Fallback and Idempotency`, `Architecture Constraints`, `Historical Constraints`).
-4. **Check for conflicts.** If a candidate contradicts an existing rule, do **not**
-   propose it as a write — list it separately as a question for the user
-   (`⚠ Conflicts with "<existing rule>" in <file> — which one holds?`). Existing rules
-   are never edited, reworded, or removed by this step.
-5. **Ask once**, with a single multi-select `AskUserQuestion`: one option per candidate,
-   label = the rule, description = `<target file> § <section>`. Nothing is selected by
-   default.
-6. **Write only the approved ones**, one call per target file:
-
-   ```bash
-   python3 ${CLAUDE_PLUGIN_ROOT}/lib/promote.py apply "<rules-file>" "$SLUG" \
-     '[{"section": "Business Invariants", "rule": "<approved rule text>"}]'
-   ```
-
-   `promote.py` inserts each rule as a new bullet at the end of its section (creating the
-   section, or the file, if missing) with a provenance marker —
-   `- <rule> _(from spec <slug>, <YYYY-MM-DD>)_` — and **refuses to write** (exit 1) if any
-   pre-existing line would change. Hand-written rules and rationale are preserved
-   byte-for-byte; that guarantee is enforced in code, not left to this prose. On exit 1,
-   report it and continue to Step 7 without retrying.
+Follow REF § Promote durable rules — read only the spec's `## Safe Constraints` and
+resolved OQs, pick at most **4** feature-agnostic durable invariants (zero is normal:
+print `No durable rules to promote.` and go to Step 7), choose a target per candidate,
+list conflicts with existing rules as questions instead of writes, ask **once** with a
+multi-select `AskUserQuestion` (nothing preselected), and write only the approved ones
+with `lib/promote.py apply`. Existing rules are never edited, reworded or removed —
+`promote.py` refuses (exit 1) any write that would change an existing line; on exit 1,
+report it and continue to Step 7 without retrying.
 
 The rules file is left as an uncommitted change — `/sdd:close` never commits. Mention it
 in the Step 9 summary so the user commits it with their next change.
@@ -346,20 +326,7 @@ Branch '<current_branch>' is not the parent ('<parent_branch>').
 | **s** | Stay on `current_branch`; keep the branch. |
 | **q** | Stop here without switching or deleting. |
 
-To switch to the parent safely — checking it out from `origin` when it only exists remotely:
-
-```bash
-checkout_parent() {
-  if git rev-parse --verify --quiet "refs/heads/$PARENT" >/dev/null; then
-    git checkout "$PARENT"
-  elif git rev-parse --verify --quiet "refs/remotes/origin/$PARENT" >/dev/null; then
-    git checkout -b "$PARENT" "origin/$PARENT"
-  else
-    echo "Parent branch '$PARENT' not found locally or on origin." >&2
-    return 1
-  fi
-}
-```
+Switch to the parent with the `checkout_parent` helper (REF § checkout_parent) — it checks the parent out from `origin` when it only exists remotely.
 
 For **d**: run `checkout_parent` and only on success `git branch -D "$current_branch"`. `/sdd:close` **never** touches the remote branch — `git push origin --delete` is the user's call.
 
