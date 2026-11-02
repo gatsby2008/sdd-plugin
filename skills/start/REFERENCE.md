@@ -132,3 +132,93 @@ Cache:   .specwork/_state/existing-work-implementation-cache.json
 
 Next:    /sdd:spec (draft the spec from the captured source)
 ```
+
+---
+
+## Existing-pipeline messages
+
+**Step 0** — print the block for the case that applies, substituting the placeholders.
+
+### Case A — this branch owns an active pipeline
+
+```text
+✗ There is an active pipeline for <ACTIVE_SLUG> (branch <CURRENT_BRANCH>).
+  /sdd:start will not start new work on top of it.
+
+  • Continue it:  run /sdd:spec (draft/refine) or /sdd:state (next step)
+  • Park it:      run /sdd:pause to stash <ACTIVE_SLUG> and resume later
+  • Close it:     run /sdd:close (then /sdd:start for the new work)
+```
+
+### Case B — orphan leftovers whose work already landed
+
+```text
+✗ /sdd:start did not start anything — .specwork/ still holds a finished pipeline.
+
+    • <slug> (branch <branch>) — already merged into <base_branch>
+    • <slug> (branch <branch>) — branch no longer exists locally
+
+  That work already landed. Clear the leftovers, then start again:
+
+    /sdd:close                 # re-checks MR state, then wipes .specwork/
+    /sdd:start <your input>
+```
+
+### Case C — orphan leftovers still in flight
+
+```text
+✗ .specwork/ belongs to '<branch>' (slug '<slug>'), not '<CURRENT_BRANCH>'.
+  /sdd:start will not start new work on top of another branch's pipeline.
+
+  • Resume it:  switch to '<branch>' and run /sdd:state
+  • Park it:    switch to '<branch>' and run /sdd:pause, then come back here
+  • Renamed?    run /sdd:resync if '<branch>' is this branch under an old name
+```
+
+Case B, extra line for each `branch-gone` entry:
+
+```text
+  If <branch> was renamed rather than merged, run /sdd:resync instead of /sdd:close.
+```
+
+---
+
+## Jira fetch
+
+**Jira Access Without MCP** — the fetch, with the supplementary note appended:
+
+```bash
+source ${CLAUDE_PLUGIN_ROOT}/lib/jira.sh
+
+if jira_is_ticket_key "$TICKET" && jira_is_configured; then
+  jira_write_issue_markdown "$TICKET" ".specwork/_spec/<slug>-source.md"
+  # Preserve any supplementary free text typed alongside the ticket
+  # (e.g. /sdd:start PROJ-123 "watch out: only the publisher, not the consumer").
+  # That note is usually the highest-value, least-recoverable context — never drop it.
+  if [ -n "$DESC" ]; then
+    printf '\n## Additional context (from /sdd:start)\n\n%s\n' "$DESC" \
+      >> ".specwork/_spec/<slug>-source.md"
+  fi
+fi
+```
+
+Jira not configured — print and stop:
+
+```
+✗ Jira is not configured. Set the following environment variables and retry:
+
+  export JIRA_BASE_URL=https://<your-domain>.atlassian.net
+  export JIRA_USER=your@email.com
+  export JIRA_TOKEN=<personal-access-token>
+
+Run /sdd:start again once Jira is configured.
+```
+
+---
+
+## Related Skills
+
+- `spec` — drafts the spec from the source captured here; run it next
+- `plan` — optional discovery + plan step (recommended for medium/large features)
+- `implement` — consumes the spec + rules (and the plan if it exists)
+- `close` — clears `.specwork/` artifacts including `_state/`

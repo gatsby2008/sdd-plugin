@@ -18,6 +18,10 @@ Runs `/init` to bootstrap the project's `CLAUDE.md` **only when none exists**, t
 
 ---
 
+`REF` below means `${CLAUDE_PLUGIN_ROOT}/skills/start/REFERENCE.md`. Read a `REF §` section only when its step needs it.
+
+---
+
 ## Execution
 
 | Step | Action |
@@ -70,14 +74,7 @@ reuses or deletes an existing `.specwork/`. Starting over is an explicit
 Some entry has `is_current: true`. The user is mid-pipeline and should continue,
 park, or close it. Use that entry's `slug` as `<ACTIVE_SLUG>`:
 
-```text
-✗ There is an active pipeline for <ACTIVE_SLUG> (branch <CURRENT_BRANCH>).
-  /sdd:start will not start new work on top of it.
-
-  • Continue it:  run /sdd:spec (draft/refine) or /sdd:state (next step)
-  • Park it:      run /sdd:pause to stash <ACTIVE_SLUG> and resume later
-  • Close it:     run /sdd:close (then /sdd:start for the new work)
-```
+Message: REF § Existing-pipeline messages → Case A.
 
 If `$ARGUMENTS` clearly points at **different** work (a ticket key that does not
 equal `<ACTIVE_SLUG>`, or any free-text description), lead with that mismatch so
@@ -91,27 +88,13 @@ footgun: a feature was merged and `/sdd:close` was never run, so dead state sits
 on disk and blocks unrelated new work. Do **not** offer `/sdd:spec` here — there
 is nothing worth continuing. Name each closable entry with its reason:
 
-```text
-✗ /sdd:start did not start anything — .specwork/ still holds a finished pipeline.
-
-    • <slug> (branch <branch>) — already merged into <base_branch>
-    • <slug> (branch <branch>) — branch no longer exists locally
-
-  That work already landed. Clear the leftovers, then start again:
-
-    /sdd:close                 # re-checks MR state, then wipes .specwork/
-    /sdd:start <your input>
-```
+Message: REF § Existing-pipeline messages → Case B.
 
 Render one bullet per `closable` entry: `merge_status: "merged"` → "already merged
 into `<base_branch>`"; `merge_status: "branch-gone"` → "branch no longer exists
-locally". For a `branch-gone` entry, add this line — a branch rename that skipped
-`/sdd:resync` is indistinguishable from a merged-and-deleted branch, and
-`/sdd:close` would throw away live work:
-
-```text
-  If <branch> was renamed rather than merged, run /sdd:resync instead of /sdd:close.
-```
+locally". For a `branch-gone` entry, add the *renamed?* line from the same REF
+section — a branch rename that skipped `/sdd:resync` is indistinguishable from a
+merged-and-deleted branch, and `/sdd:close` would throw away live work.
 
 `merge_status` is derived from git alone (is the branch an ancestor of its base?),
 so it is a **warning, not proof** — `/sdd:close` still verifies the real MR state
@@ -125,14 +108,7 @@ another branch and have **not** landed (`open`, or `unknown` when the merge stat
 could not be determined). Closing them would destroy unmerged work, so point at
 the owning branch instead. Use the first orphan as `<slug>` / `<branch>`:
 
-```text
-✗ .specwork/ belongs to '<branch>' (slug '<slug>'), not '<CURRENT_BRANCH>'.
-  /sdd:start will not start new work on top of another branch's pipeline.
-
-  • Resume it:  switch to '<branch>' and run /sdd:state
-  • Park it:    switch to '<branch>' and run /sdd:pause, then come back here
-  • Renamed?    run /sdd:resync if '<branch>' is this branch under an old name
-```
+Message: REF § Existing-pipeline messages → Case C.
 
 ---
 
@@ -341,22 +317,7 @@ Supported environment variables:
 - Jira Cloud: `JIRA_USER` + `JIRA_TOKEN`
 - Jira Server/Data Center PAT: `JIRA_TOKEN` + `JIRA_AUTH_MODE=bearer`
 
-Preferred fetch pattern:
-
-```bash
-source ${CLAUDE_PLUGIN_ROOT}/lib/jira.sh
-
-if jira_is_ticket_key "$TICKET" && jira_is_configured; then
-  jira_write_issue_markdown "$TICKET" ".specwork/_spec/<slug>-source.md"
-  # Preserve any supplementary free text typed alongside the ticket
-  # (e.g. /sdd:start PROJ-123 "watch out: only the publisher, not the consumer").
-  # That note is usually the highest-value, least-recoverable context — never drop it.
-  if [ -n "$DESC" ]; then
-    printf '\n## Additional context (from /sdd:start)\n\n%s\n' "$DESC" \
-      >> ".specwork/_spec/<slug>-source.md"
-  fi
-fi
-```
+Fetch with `jira_write_issue_markdown` from `lib/jira.sh` straight into `source.md`, then append any free text typed after the key under `## Additional context (from /sdd:start)` (code: REF § Jira fetch).
 
 Here `$TICKET` is the leading ticket key and `$DESC` is any free text typed after
 it. When the user passes a ticket plus a note, the note must end up in
@@ -364,16 +325,7 @@ it. When the user passes a ticket plus a note, the note must end up in
 
 **When the input is a Jira ticket key, Jira access is required — do NOT fall back silently.**
 
-- **Jira not configured** (missing `JIRA_BASE_URL` / `JIRA_TOKEN`): stop immediately, do not create any `.specwork/` artifacts, and tell the user:
-  ```
-  ✗ Jira is not configured. Set the following environment variables and retry:
-
-    export JIRA_BASE_URL=https://<your-domain>.atlassian.net
-    export JIRA_USER=your@email.com
-    export JIRA_TOKEN=<personal-access-token>
-
-  Run /sdd:start again once Jira is configured.
-  ```
+- **Jira not configured** (missing `JIRA_BASE_URL` / `JIRA_TOKEN`): stop immediately, do not create any `.specwork/` artifacts, and print the setup message from REF § Jira fetch (*Jira not configured*).
 
 - **Jira configured but the call fails** (curl error, HTTP error, bad credentials): stop immediately, do not create any `.specwork/` artifacts, and tell the user the specific error returned.
 
@@ -419,12 +371,3 @@ always `/sdd:spec`:
 (it reads `## Summary` + `## Behavior`, which only exist once the spec is
 drafted). After `/sdd:spec`, triage's recommended path leads into `/sdd:plan` /
 `/sdd:implement`.
-
----
-
-## Related Skills
-
-- `spec` — drafts the spec from the source captured here; run it next
-- `plan` — optional discovery + plan step (recommended for medium/large features)
-- `implement` — consumes the spec + rules (and the plan if it exists)
-- `close` — clears `.specwork/` artifacts including `_state/`
