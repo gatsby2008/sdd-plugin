@@ -23,8 +23,7 @@ INDEPENDENT: Documentation & Knowledge (any branch, any time)
   /sdd:doc-adr           — capture an architectural decision + store in central registry (or `list`)
   /sdd:doc-spec          — store a feature spec.md in the central spec registry (or `list`)
   /sdd:doc-investigation       — capture a session investigation + store in central registry
-  /sdd:ask               — one query across all four registries (+ wiki layer when present);
-                           the /sdd:doc-*-query commands are deprecated aliases
+  /sdd:ask               — one query across all four registries (+ wiki layer when present)
   /sdd:doc-ingest        — compile raw/ registries into the wiki/ layer (two-layer vault only)
 
 INDEPENDENT: Java Review Packs (deep-dive reviewers, any branch, any time)

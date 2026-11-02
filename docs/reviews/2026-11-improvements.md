@@ -141,6 +141,15 @@ plugin queda por decidir.
 | 2. Quitar los cuatro `*-query` | Stubs de una versión que redirigen a `/sdd:ask type:…` | Borra skills (requiere OK) | **S** |
 | 3. Separar el registro | Mover los ~6 skills al plugin nuevo; documentar el contrato del registro; sugerencias condicionales en `/sdd:mr` y `/sdd:whatnext`; stubs en `sdd` que indican dónde se movió cada comando | Renombra comandos | **M** |
 
+**Estado (2026-11-02).** Pasos 1 y 2 hechos; el 3 no se hace (se decidió no
+separar el registro). `ask` usa `lib/registry.py`: índice + carga selectiva con
+presupuesto, filtros `type:`/`service:` opcionales y aviso de wiki atrasada. Paridad
+con los `*-query` medida con 20 preguntas reales sobre el registro del equipo:
+20/20. La detección de servicio objetivo se reemplazó por un boost (nombrar un
+servicio sube sus documentos sin filtrar), y "¿quién consume X?" se resuelve por el
+identificador en las secciones Publishes/Consumes. Los cuatro `*-query` se borraron
+el mismo día, a pedido, sin la versión de stubs.
+
 **Riesgos**
 
 - *Renombre visible* (`/sdd:doc-adr` → `/<plugin>:adr`): memoria muscular, docs

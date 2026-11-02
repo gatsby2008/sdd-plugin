@@ -212,7 +212,7 @@ fail): "Tip: `/sdd:ask` reads `## Summary`, `## Behavior`, `## Scope`,
 
 ## Related Skills
 
-- `ask` — one query across every registry (spec included); `doc-spec-query` is its deprecated alias
+- `ask` — one query across every registry (spec included)
 - `mr` (sdd bundle) — publishes the pipeline spec automatically after creating the MR
 - `spec` (sdd bundle) — authors the `spec.md` this registry stores
 - `doc-catalog` / `doc-adr` — same create-and-store pattern for catalogs and ADRs

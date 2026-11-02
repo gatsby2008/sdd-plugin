@@ -405,7 +405,6 @@ STANDALONE TOOLS  (independent — run on any branch, any time, no pipeline requ
                            /sdd:ask why did consumer-portal pick PostgreSQL?
                            /sdd:ask type:spec which specs have open questions?
                            /sdd:ask have we seen ReportToken reuse before?
-                         The four /sdd:doc-*-query commands are deprecated aliases.
                            /sdd:ask who consumes LeadCreated and why did we design it that way?
 
   /sdd:doc-ingest            Compile raw/ → wiki/ in a two-layer vault: extract entities +

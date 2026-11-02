@@ -55,14 +55,12 @@ sdd-plugin/
 ├── .claude-plugin/
 │   ├── plugin.json        Plugin manifest (name: sdd)
 │   └── marketplace.json   Marketplace entry (gatsby)
-├── skills/                34 flat skills → /sdd:<name>
+├── skills/                30 flat skills → /sdd:<name>
 │   ├── start, spec, plan, implement, commit, mr, close, auto,
 │   │   code-review, mr-review, mr-address, state, whatnext, handoff,
 │   │   pause, restore, resync, undo, test-design, test-impl
-│   ├── doc-catalog, doc-catalog-query, doc-adr, doc-adr-query,
-│   │   doc-spec, doc-spec-query,
-│   │   doc-investigation, doc-investigation-query,
-│   │   doc-ingest, ask       (ask: one query over all registries; *-query: deprecated aliases)
+│   ├── doc-catalog, doc-adr, doc-spec, doc-investigation,
+│   │   doc-ingest, ask       (ask: one query over all registries)
 │   └── api-contract-review, concurrency-review, jpa-patterns, logging-patterns
 ├── agents/
 │   ├── java/  → sdd:java:quality-reviewer, sdd:java:security-reviewer

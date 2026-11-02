@@ -359,5 +359,5 @@ after merging. It writes only to the registry, never to the service repo's worki
 
 ## Related Skills
 
-- `ask` — one query across every registry (adr included); `doc-adr-query` is its deprecated alias
+- `ask` — one query across every registry (adr included)
 - `doc-catalog` — same create-and-store pattern for the service catalog

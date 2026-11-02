@@ -310,6 +310,6 @@ search across all captured investigations.
 
 ## Related Skills
 
-- `ask` — one query across every registry (investigation included); `doc-investigation-query` is its deprecated alias
+- `ask` — one query across every registry (investigation included)
 - `doc-adr` — for capturing a *decision* (immutable, supersede-only) rather than a finding
 - `spec` (sdd bundle) — for forward-looking feature specs vs. backward-looking investigations

@@ -580,5 +580,5 @@ the service repo's working tree.
 
 ## Related Skills
 
-- `ask` — one query across every registry (catalog included); `doc-catalog-query` is its deprecated alias
+- `ask` — one query across every registry (catalog included)
 - `doc-adr` — capture architectural decisions made while building or evolving the service

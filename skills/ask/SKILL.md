@@ -78,11 +78,6 @@ what you opened) and offer to widen — never invent.
 
 ---
 
-## Relationship to the typed queries
-
-`/sdd:doc-catalog-query`, `/sdd:doc-adr-query`, `/sdd:doc-spec-query` and
-`/sdd:doc-investigation-query` are deprecated aliases of `/sdd:ask type:<registry>`.
-
 ## Related Skills
 
 - `/sdd:doc-ingest` — builds/refreshes the `wiki/` layer this skill navigates.

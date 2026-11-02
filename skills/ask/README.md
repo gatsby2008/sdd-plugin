@@ -1,8 +1,7 @@
 # Ask — unified knowledge query
 
 One query for the whole docs-registry. `/sdd:ask` answers any cross-service knowledge
-question — services, decisions, specs, investigations — instead of making you pick the
-right `doc-*-query`.
+question — services, decisions, specs, investigations — with one command.
 
 ## The design in one line
 
@@ -43,11 +42,6 @@ registry (reproducing a single-registry query); omit it to search across all fou
 `type:` / `service:` are optional: without them `ask` searches everything and ranks by
 relevance. A service named in the question boosts its docs but does not filter —
 "who consumes X from leads-service?" still needs the other services' catalogs.
-
-## Supersedes
-
-`/sdd:doc-catalog-query`, `/sdd:doc-adr-query`, `/sdd:doc-spec-query` and
-`/sdd:doc-investigation-query` are deprecated aliases of `/sdd:ask type:<registry>`.
 
 ## Related Skills
 

@@ -1,6 +1,6 @@
 # Documentation Skills
 
-A bundle of ten skills that together form a documentation and cross-service architecture-discovery workflow. Four parallel families — for **service catalogs**, **ADRs**, **feature specs**, and **investigations** — share one shape: `doc-<artifact>` **creates + stores** it in the central registry, and **`/sdd:ask`** reads all four back with one query (`type:<artifact>` to restrict it). The old `doc-<artifact>-query` commands remain as deprecated aliases. There is no separate `publish` step — creating an artifact stores it — and nothing is written into the service repo's working tree. **`/sdd:doc-ingest`** adds an optional second knowledge layer (see *Two-layer vault* below).
+A bundle of six skills that together form a documentation and cross-service architecture-discovery workflow. Four parallel families — for **service catalogs**, **ADRs**, **feature specs**, and **investigations** — share one shape: `doc-<artifact>` **creates + stores** it in the central registry, and **`/sdd:ask`** reads all four back with one query (`type:<artifact>` to restrict it). There is no separate `publish` step — creating an artifact stores it — and nothing is written into the service repo's working tree. **`/sdd:doc-ingest`** adds an optional second knowledge layer (see *Two-layer vault* below).
 
 ## Members
 
@@ -11,7 +11,6 @@ A bundle of ten skills that together form a documentation and cross-service arch
 | `/sdd:doc-spec` | Store a hand-written or standalone `spec.md` at `~/.claude/spec-registry/<service>/`. Authoring is `/sdd:spec`; the SDD pipeline's `/sdd:mr` stores specs automatically — this is the registry side for vibe-coding / non-pipeline flows. `list` shows the registry. |
 | `/sdd:doc-investigation` | Capture the current session into a fixed-shape document — `bug` (Problem → … → Fix), `exploration` (Question → … → Future Signals), or `improvements` (Goal → Gap Analysis → Plan → Out of Scope), a forward-looking remediation plan — and store it at `~/.claude/investigation-registry/<service>/`. Synthesizes from the conversation; run it in any repo, even one that isn't yours. |
 | `/sdd:ask` | **One query** across all four registries. `lib/registry.py` loads only the documents that match the question, within a budget (an index of every doc is always printed). Grounds every answer in `raw/` and, when a `wiki/` layer exists, follows its `[[backlinks]]` for cross-cutting questions ("who consumes X *and* why we designed it that way"). Warns when the wiki is stale; optional `type:` / `service:` filters. |
-| `/sdd:doc-catalog-query` · `/sdd:doc-adr-query` · `/sdd:doc-spec-query` · `/sdd:doc-investigation-query` | Deprecated aliases of `/sdd:ask type:<artifact>`. |
 | `/sdd:doc-ingest` | Compile `raw/` → `wiki/` in a two-layer vault: extract entities + concepts, write pages with `[[backlinks]]`, update indexes + log. The *producer* that keeps `/sdd:ask` sharp. No-op on a plain registry (no `wiki/` layer). |
 
 ## Two-layer vault (optional, powers `/sdd:ask`)
