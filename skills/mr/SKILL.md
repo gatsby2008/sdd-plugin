@@ -282,13 +282,17 @@ holds the loop in code: its state lives in the git dir, one file per branch
 and counts every attempt whose content changed (re-checking the same red content is
 free), and `validation.py record` refuses to stamp HEAD while the loop is open —
 so the push hook blocks any push, a raw `git push` included, until `green` closed it.
-This raises the bar; it is not tamper-proof (a human can `reset`).
+This raises the bar; it is not tamper-proof (a human can `reset`). State left by
+deleted branches is pruned whenever a new loop opens.
 
 The guard rejects: any change to `commands/check.sh` or to a test-runner config
 (`pytest.ini`, `conftest.py`, `jest.config.*`, `.mocharc*` …); an added line that
 excludes or deselects tests in a build file (`pyproject.toml`, `package.json`,
 `pom.xml`, `build.gradle` …); a removed or modified line in an existing test file;
-a deleted (or renamed) test file; and an added skip/disable/focus marker.
+a deleted (or renamed) test file; and an added skip/disable/focus marker. Files that
+were already untracked when the loop opened (`.DS_Store`, local scratch) are left out
+and never block the close — including an untracked test file whose skip marker
+predates the loop: the guard judges only what the repair changes.
 
 **Ask first, unless non-interactive.** Detect the mode the same way `/sdd:commit` does:
 
@@ -327,7 +331,8 @@ post-rebase failure (Branch Sync Check) — those keep their current behavior.
    needs a business decision the spec does not settle, stop — that is an Open Question,
    not a repair.
 3. Re-run [Pre-Push Validation](#pre-push-validation) from step 1. Its `pre` step runs
-   the guard and counts the attempt; it ends red (next attempt, or exhausted) or green
+   the guard and counts the attempt (unchanged content costs no attempt, but `check.sh`
+   still re-runs in full — do not re-run just to read the output again); it ends red (next attempt, or exhausted) or green
    (commit, then push).
 
 **Stopped** (guard rejection or exhausted) → do not push; report the reason and the last

@@ -65,7 +65,8 @@ printf 'def add(a, b):\n    return a + b\n' > calc.py
 assert_out "RUN_CHECK" "pre counts a clean attempt" -- python3 "$SDD/lib/repair.py" pre
 assert_rc 0 "check.sh is green after the fix" -- bash commands/check.sh
 assert_rc 4 "green asks to commit the repair first" -- python3 "$SDD/lib/repair.py" green
-printf 'from calc import add\n\ndef test_extra():\n    assert add(1, 1) == 2\n' > tests/test_extra.py
+printf 'import unittest\nfrom calc import add\n\nclass Extra(unittest.TestCase):\n    def test_extra(self):\n        self.assertEqual(add(1, 1), 2)\n' > tests/test_extra.py
+assert_out "Ran 2 tests" "the repair's new test file actually runs" -- bash commands/check.sh
 assert_out "tests/test_extra.py" "green lists a new untracked test file to commit" -- python3 "$SDD/lib/repair.py" green
 git add -A && git commit -qm "fix: repair"
 assert_out "SKIP_CHECK" "re-run after commit skips the re-check" -- python3 "$SDD/lib/repair.py" pre
