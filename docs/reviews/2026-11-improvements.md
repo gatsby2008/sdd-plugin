@@ -94,6 +94,25 @@ beneficio/ruptura: un solo renombre y ningún acoplamiento de invocación
 ### Esfuerzo
 A: **L** · B: **M** · C: **M** (8 skills × medio día, mecánico, mismo método que el piloto).
 
+**Estado de C (2026-11-02).** Hecho, con el método del piloto (SKILL.md conserva
+pasos, gates y reglas; REFERENCE.md lo que se lee solo en una rama del flujo):
+
+| Skill | Antes | Después | Qué se movió |
+|---|---:|---:|---|
+| `doc-catalog` | 3 402 | 1 538 | Reglas de escaneo y plantilla por stack (se lee solo el detectado) |
+| `spec` | 3 187 | ~2 550 | Mensaje no-op, fetch Jira, detalle de `--tier`, plantillas de salida |
+| `mr` | 2 865 | 2 353 | Repair Loop (solo con `check.sh` en rojo), aviso de pipeline ajeno |
+| `start` | 2 874 | 2 628 | Mensajes de los casos A/B/C, fetch Jira |
+| `whatnext` | 2 604 | 1 720 | Tarjeta de `overview` |
+| `close` | 2 245 | 2 081 | Procedimiento de promoción de reglas, helper de checkout |
+| `doc-investigation` | 2 202 | 1 877 | Mapeo por tipo, `list` |
+
+No se partieron `handoff` (la plantilla del pack y el JSON se usan en cada corrida:
+moverlos no ahorra nada) ni `jpa-patterns` (es un pack de conocimiento: su cuerpo es
+el contenido). Las descripciones de los cuatro agentes java/ui pasaron de ~850 a
+~135 palabras: los `<example>` se quitaron en lugar de moverse al cuerpo, porque solo
+orientan la invocación y dentro del prompt del agente serían ruido en cada review.
+
 ### Anexo — Repensar la familia de docs antes de separarla
 
 Revisión posterior de la recomendación. Mover los 10 skills de docs tal como
